@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-
+from sklearn.metrics import f1_score
 class trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
         self.model = model
@@ -11,53 +11,64 @@ class trainer:
         self.val_dataloader = val_dataloader
         self.logger = logger
         self.loss_fn = loss_fn
-        self.running_loss = 0
-        self.running_f1 = 0
+        self.running_loss = []
+        self.running_f1 = []
         self.step = 0
 
     
     def train_step(self, X, Y, ROI):
         self.model.train()
         self.optimizer.zero_grad()
-        pred = self.model(X).squeeze(1)[ROI>0.9]
-        Y = Y[ROI>0.9]
-        loss = self.loss_fn(pred, Y)
+        pred = self.model(X).squeeze(1)
+        loss = self.loss_fn(pred, Y, ROI)
         loss.backward()
         self.optimizer.step()
-        f1 = (2 * (pred > 0).float() * Y.float()).sum() / ((pred > 0).float() + Y.float()).sum()
+        e = 1e-6
+        pred = torch.sigmoid(pred) > 0.5
+        pred = pred.float() * ROI
+        Y = Y.float() * ROI
+        f1 = ((2 * pred * Y).sum() + e) / ((pred + Y).sum() + e)
         
-        self.running_loss += loss.item()
-        self.running_f1 += f1.item()
+        self.running_loss += [loss.item()]
+        self.running_f1 += [f1.item()]
 
     def validate(self, X, Y, ROI):
         self.model.eval()
         with torch.no_grad():
-            pred = self.model(X).squeeze(1)[ROI>0.9]
-            Y = Y[ROI>0.9]
-            loss = self.loss_fn(pred, Y)
-            f1 = (2 * (pred > 0).float() * Y.float()).sum() / ((pred > 0).float() + Y.float()).sum()
+            pred = self.model(X).squeeze(1)
+            loss = self.loss_fn(pred, Y, ROI)
+            e = 1e-6
+            pred = torch.sigmoid(pred)
+            pred_ = pred.float()[ROI > 0.9] > 0.5
+            Y = Y.float()[ROI > 0.9] 
+            f1 = f1_score(Y.cpu().numpy(), pred_.cpu().numpy(), average="binary") 
         return loss, f1, pred
     
     
     def train_epoch(self):
         import tqdm
-        for i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader)):
+        for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader)):
             self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
-            if i%300 == 0: 
-                self.logger.log({"pstep":self.step,"loss": self.running_loss / 300, "f1": self.running_f1 / 300})
-                print(f"Epoch {self.step}, Step {i}, Loss: {self.running_loss / 300}, F1: {self.running_f1 / 300}")
+            if train_i%100 == 0: 
+                self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1)})
+                print(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
-                for i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
+                for val_i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
                     val_loss, val_f1, pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
                     val_runnning_loss += val_loss
                     val_running_f1 += val_f1
-                self.logger.log({"pstep":self.step, "pred": self.logger.Image(pred.unsqueeze(1)), "gt": self.logger.Image(val_Y.unsqueeze(1)), "in": self.logger.Image(val_X[:,:3])}) 
+                self.logger.log({"pstep":self.step,
+                                 "pred": self.logger.Image(pred.unsqueeze(1)),
+                                 "gt": self.logger.Image(val_Y.unsqueeze(1)),
+                                 "in": self.logger.Image(val_X[:,:3]),
+                                 "roi": self.logger.Image(val_ROI.unsqueeze(1))
+                })
                 
                 self.logger.log({"pstep":self.step, "val_loss": val_runnning_loss / len(self.val_dataloader), "val_f1": val_running_f1 / len(self.val_dataloader)})
                 print(f"Validation Loss: {val_runnning_loss / len(self.val_dataloader)}, Validation F1: {val_running_f1 / len(self.val_dataloader)}")
 
-                self.running_loss = 0
-                self.running_f1 = 0
+                self.running_loss = []
+                self.running_f1 = []
                 self.lr_scheduler.step()
                 self.step += 1
                 if self.step >= 1000:
