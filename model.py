@@ -21,7 +21,7 @@ class MyModel(torch.nn.Module):
         self.texture_conv = torch.nn.Sequential(
             torch.nn.Conv2d(3, 32, kernel_size=(5, 5), stride=(1, 1), padding="same"),
             torch.nn.BatchNorm2d(32),
-            torch.nn.Dropout2d(0.2),
+            torch.nn.Dropout2d(0.1),
             torch.nn.ReLU(),
             torch.nn.Conv2d(32, 64, kernel_size=(5, 5), stride=(1, 1), padding="same"),
             torch.nn.BatchNorm2d(64),
@@ -30,23 +30,24 @@ class MyModel(torch.nn.Module):
 
         self.trans_conv = torch.nn.Sequential(
             torch.nn.ConvTranspose2d(256, 128, kernel_size=(4, 4), stride=(2, 2), padding=1),
+            torch.nn.BatchNorm2d(128),
             torch.nn.ReLU(),
-            torch.nn.Dropout2d(0.2),
+            torch.nn.Dropout2d(0.1),
             torch.nn.ConvTranspose2d(128, 64, kernel_size=(4, 4), stride=(2, 2), padding=1)
         )
 
         self.upsampling = torch.nn.Upsample(scale_factor=4, mode='bicubic', align_corners=False)
 
         self.head = torch.nn.Sequential(
-            torch.nn.Conv2d(128, 64, kernel_size=(5, 5), stride=(1, 1), padding="same"),
+            torch.nn.Conv2d(128, 64, kernel_size=(7, 7), stride=(1, 1), padding="same"),
             torch.nn.BatchNorm2d(64),
-            torch.nn.Dropout2d(0.2),
+            torch.nn.Dropout2d(0.1),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(64, 32, kernel_size=(5, 5), stride=(1, 1), padding="same"),
+            torch.nn.Conv2d(64, 32, kernel_size=(7, 7), stride=(1, 1), padding="same"),
             torch.nn.BatchNorm2d(32),
-            torch.nn.Dropout2d(0.2),
+            torch.nn.Dropout2d(0.1),
             torch.nn.ReLU(), 
-            torch.nn.Conv2d(32, 1, kernel_size=(5, 5), stride=(1, 1), padding="same"),
+            torch.nn.Conv2d(32, 1, kernel_size=(7, 7), stride=(1, 1), padding="same"),
         )        
         
     def forward(self, X):
