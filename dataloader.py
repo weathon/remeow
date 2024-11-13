@@ -5,6 +5,7 @@ from PIL import Image
 import torch
 import numpy as np
 import random
+import torchvision
 
 class CustomDataset(Dataset):
     def __init__(self, train_path, val_path, fold, mode='train'):
@@ -17,28 +18,80 @@ class CustomDataset(Dataset):
             image_names = f.read().split("\n")
 
         if mode == 'train':
-            self.image_names = []
-            for name in image_names:
-                for i in range(1, 6):
-                    self.image_names.append(f'{i}_{name}')
+            # self.image_names = []
+            # for name in image_names:
+            #     for i in range(1, 2):
+            #         self.image_names.append(f'{i}_{name}')
+            self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
-                transforms.ToDtype(torch.uint8),
-                # transforms.RandomResizedCrop((512, 512)),
             ])
         else:
-            self.image_names = random.sample(image_names, 512)
+            self.image_names = random.sample(image_names, 1024)
             self.transform = transforms.Compose([
                 transforms.ToImage(),
-                transforms.ToDtype(torch.uint8),
                 transforms.Resize((512, 512)),
             ])
+        self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
+         
 
+    def crop(self, in_image, long_image, short_image, gt_image, roi_image):
+        top_left = np.random.randint(0, 256, 2)
+        width = np.random.randint(256, 512) 
+        height = np.random.randint(256, 512)
+        in_image = in_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
+        long_image = long_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
+        short_image = short_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
+        gt_image = gt_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
+        roi_image = roi_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
+        
+
+        in_image = torchvision.transforms.functional.resize(in_image, (512, 512))
+        long_image = torchvision.transforms.functional.resize(long_image, (512, 512))
+        short_image = torchvision.transforms.functional.resize(short_image, (512, 512))
+        gt_image = torchvision.transforms.functional.resize(gt_image, (512, 512))
+        roi_image = torchvision.transforms.functional.resize(roi_image, (512, 512))
+    
+        return in_image, long_image, short_image, gt_image, roi_image
+    
+    
     def __len__(self):
         return len(self.image_names)
 
+    def strong_pan(self, img): 
+        shifteds = [img] 
+        img2 = img
+        for i in range(random.randint(5, 60)):
+            shiftx = random.randint(0, 20)
+            # shifty = random.random() * 20
+            # tmp = torch.roll(img, shifts=shift, dims=1) 
+            img = torchvision.transforms.functional.affine(img, angle=0, translate=(shiftx, 0), scale=1, shear=0)
+            img2 = torchvision.transforms.functional.affine(img2, angle=0, translate=(-shiftx, 0), scale=1, shear=0)
+            # if args.panrotate: 
+            #     img = self.panrotate(img)
+            shifteds.append(img) 
+            shifteds.append(img2)
+
+        return torch.stack(shifteds).median(0).values
+            
+    def weak_pan(self, img):
+        shifteds = [img] 
+        img2 = img
+        for i in range(random.randint(5, 20)):
+            shiftx = random.randint(0, 20)
+            # shifty = random.random() * 20
+            # tmp = torch.roll(img, shifts=shift, dims=1) 
+            img = torchvision.transforms.functional.affine(img, angle=0, translate=(shiftx, 0), scale=1, shear=0)
+            img2 = torchvision.transforms.functional.affine(img2, angle=0, translate=(-shiftx, 0), scale=1, shear=0)
+            # if args.panrotate: 
+            #     img = self.panrotate(img)
+            shifteds.append(img) 
+            shifteds.append(img2)
+
+        return torch.stack(shifteds).median(0).values
+    
     def close(self, a, b):
-        diff = np.abs(a - b)
+        diff = np.abs(a - b) 
         return diff < 0.04 * b
     
     def __getitem__(self, idx):
@@ -53,20 +106,29 @@ class CustomDataset(Dataset):
         long_image = np.array(Image.open(long_path).resize((512, 512), Image.NEAREST))
         short_image = np.array(Image.open(short_path).resize((512, 512), Image.NEAREST))
         gt_image = np.array(Image.open(gt_path).resize((512, 512), Image.NEAREST))
-        if self.mode == 'train':
-            roi_path = os.path.join(self.data_path, 'ROI', image_name)
-            roi_image = np.array(Image.open(roi_path).resize((512, 512), Image.NEAREST))
-        else:
-            roi_image = ~self.close(gt_image.mean(-1), 85) * 255
+        # if self.mode == 'train':
+        #     roi_path = os.path.join(self.data_path, 'ROI', image_name)
+        #     roi_image = np.array(Image.open(roi_path).resize((512, 512), Image.NEAREST))
+        # else:
+        roi_image = ~self.close(gt_image.mean(-1), 85) * 255
         in_image = np.array(Image.open(in_path).resize((512, 512), Image.NEAREST))
 
         long_image, short_image, gt_image, in_image, roi_image = self.transform(long_image, short_image, gt_image, in_image, roi_image)
+        if self.mode == 'train':
+            in_image, long_image, short_image, gt_image, roi_image = self.crop(in_image, long_image, short_image, gt_image, roi_image)
+        if self.mode == 'train':
+            if random.random() > 0.9:
+                long_image = self.strong_pan(long_image)
+                short_image = self.strong_pan(short_image)
 
         X = torch.cat([in_image, long_image, short_image], dim=0)
         ROI = transforms.functional.resize(roi_image, (512, 512))
         Y = gt_image
         Y = transforms.functional.resize(Y, (512, 512))
         X, Y, ROI = X/255, Y/255, ROI/255
+        if self.mode == 'train':
+            X = self.noise(X)
+            
         Y = (Y > 0.95).float()
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
     

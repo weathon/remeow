@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+from sklearn.metrics import f1_score
 class trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
         self.model = model
@@ -13,6 +14,7 @@ class trainer:
         self.running_loss = []
         self.running_f1 = []
         self.step = 0
+        self.validate_f1 = False
 
     
     def train_step(self, X, Y, ROI):
@@ -41,10 +43,17 @@ class trainer:
             e = 1e-6
             # pred = torch.sigmoid(pred)
             pred_ = pred[ROI > 0.9] > 0.5
+            pred = torch.where(ROI > 0.9, pred, 0)
             pred_ = pred_.float()
             Y = Y[ROI > 0.9] > 0.5
             Y = Y.float()
             f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
+            # if not self.validate_f1:
+            #     sklearn_f1 = f1_score(Y.cpu().numpy(), pred_.cpu().numpy())
+            #     if not np.isclose(f1.item(), sklearn_f1):
+            #         print(f"\033[93m Mismatch {f1.item()}, {sklearn_f1}\033[0m")
+            # self.validate_f1 = True
+
         return loss, f1, pred.float()
     
     
@@ -52,8 +61,8 @@ class trainer:
         import tqdm
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
-            if train_i%100 == 0: 
-                self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1)})
+            if train_i%300 == 0: 
+                self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 print(f"\n Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
                 for val_i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
