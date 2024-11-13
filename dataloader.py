@@ -36,23 +36,21 @@ class CustomDataset(Dataset):
          
 
     def crop(self, in_image, long_image, short_image, gt_image, roi_image):
-        top_left = np.random.randint(0, 256, 2)
-        width = np.random.randint(256, 512) 
-        height = np.random.randint(256, 512)
-        in_image = in_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
-        long_image = long_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
-        short_image = short_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
-        gt_image = gt_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
-        roi_image = roi_image[:,top_left[0]:top_left[0]+height, top_left[1]:top_left[1]+width]
+        top = random.randint(0, 256)
+        left = random.randint(0, 256)
+        width = random.randint(256, 512)
+        height = random.randint(256, 512)
         
+        width = min(width, 512 - left)
+        height = min(height, 512 - top)
 
-        in_image = torchvision.transforms.functional.resize(in_image, (512, 512))
-        long_image = torchvision.transforms.functional.resize(long_image, (512, 512))
-        short_image = torchvision.transforms.functional.resize(short_image, (512, 512))
-        gt_image = torchvision.transforms.functional.resize(gt_image, (512, 512))
-        roi_image = torchvision.transforms.functional.resize(roi_image, (512, 512))
-    
+        in_image = torchvision.transforms.functional.resized_crop(in_image, top, left, height, width, (512, 512))
+        long_image = torchvision.transforms.functional.resized_crop(long_image, top, left, height, width, (512, 512))
+        short_image = torchvision.transforms.functional.resized_crop(short_image, top, left, height, width, (512, 512))
+        gt_image = torchvision.transforms.functional.resized_crop(gt_image, top, left, height, width, (512, 512))
+        roi_image = torchvision.transforms.functional.resized_crop(roi_image, top, left, height, width, (512, 512))
         return in_image, long_image, short_image, gt_image, roi_image
+    
     
     
     def __len__(self):
