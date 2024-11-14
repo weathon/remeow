@@ -5,7 +5,7 @@ class Args:
         self.hidden_dropout_prob = 0.1
         self.drop_path_rate = 0.1
         self.classifier_dropout = 0.1
-        self.ksteps = 1000 
+        self.ksteps = 100 
 
 args = Args()
 
@@ -23,15 +23,15 @@ import wandb
 
 # model = MyModel(args)
 model = ISNetBackbone(args)
-optimizer = torch.optim.AdamW(model.parameters(), lr=1.3e-4)  
+optimizer = torch.optim.AdamW(model.parameters(), lr=4e-4)
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps)
 # train_dataset = CustomDataset("/mnt/fastdata/preaug_cdnet/", "/mnt/fastdata/CDNet", 4, "train")
 # val_dataset = CustomDataset("/mnt/fastdata/preaug_cdnet/", "/mnt/fastdata/CDNet", 4, "val")
-train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 4, "train")
-val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 4, "val")
+train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 1, "train")
+val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 1, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=50, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=True, num_workers=50, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
 
 def iou_loss(pred, target, ROI):
     assert pred.shape == target.shape == ROI.shape

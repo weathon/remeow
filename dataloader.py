@@ -22,15 +22,24 @@ class CustomDataset(Dataset):
             # for name in image_names:
             #     for i in range(1, 2):
             #         self.image_names.append(f'{i}_{name}')
-            self.image_names = image_names
+            self.image_names = image_names 
             self.transform = transforms.Compose([
                 transforms.ToImage(),
+                                transforms.RandomApply([
+                    transforms.GaussianBlur((3,13), 1), 
+                ], 0.3),
+                transforms.RandomApply([
+                    transforms.RandomRotation((-5,5)),
+                ], 0.3),
+                transforms.RandomApply([
+                    transforms.RandomResizedCrop((512, 512), scale=(0.98, 1.02)),
+                ], 0.3),
+                transforms.Resize((512, 512)),
             ])
         else:
             self.image_names = random.sample(image_names, 1024)
             self.transform = transforms.Compose([
                 transforms.ToImage(),
-                transforms.Resize((512, 512)),
             ])
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
          
@@ -39,7 +48,8 @@ class CustomDataset(Dataset):
         top = random.randint(0, 256)
         left = random.randint(0, 256)
         width = random.randint(256, 512)
-        height = random.randint(256, 512)
+        aspect_ratio = random.uniform(0.5, 1.5)
+        height = int(width * aspect_ratio)
         
         width = min(width, 512 - left)
         height = min(height, 512 - top)
@@ -61,36 +71,28 @@ class CustomDataset(Dataset):
         img2 = img
         for i in range(random.randint(5, 60)):
             shiftx = random.randint(0, 20)
-            # shifty = random.random() * 20
-            # tmp = torch.roll(img, shifts=shift, dims=1) 
             img = torchvision.transforms.functional.affine(img, angle=0, translate=(shiftx, 0), scale=1, shear=0)
             img2 = torchvision.transforms.functional.affine(img2, angle=0, translate=(-shiftx, 0), scale=1, shear=0)
-            # if args.panrotate: 
-            #     img = self.panrotate(img)
             shifteds.append(img) 
             shifteds.append(img2)
 
-        return torch.stack(shifteds).median(0).values
+        return torch.stack(shifteds).to(torch.float).mean(0)
             
     def weak_pan(self, img):
         shifteds = [img] 
         img2 = img
         for i in range(random.randint(5, 20)):
             shiftx = random.randint(0, 20)
-            # shifty = random.random() * 20
-            # tmp = torch.roll(img, shifts=shift, dims=1) 
             img = torchvision.transforms.functional.affine(img, angle=0, translate=(shiftx, 0), scale=1, shear=0)
             img2 = torchvision.transforms.functional.affine(img2, angle=0, translate=(-shiftx, 0), scale=1, shear=0)
-            # if args.panrotate: 
-            #     img = self.panrotate(img)
             shifteds.append(img) 
             shifteds.append(img2)
 
-        return torch.stack(shifteds).median(0).values
+        return torch.stack(shifteds).to(torch.float).mean(0)
     
     def close(self, a, b):
         diff = np.abs(a - b) 
-        return diff < 0.04 * b
+        return diff < 0.05 * b
     
     def __getitem__(self, idx):
         image_name = self.image_names[idx]
@@ -113,21 +115,42 @@ class CustomDataset(Dataset):
 
         long_image, short_image, gt_image, in_image, roi_image = self.transform(long_image, short_image, gt_image, in_image, roi_image)
         if self.mode == 'train':
-            in_image, long_image, short_image, gt_image, roi_image = self.crop(in_image, long_image, short_image, gt_image, roi_image)
-        if self.mode == 'train':
+            if random.random() > 0.8:
+                in_image, long_image, short_image, gt_image, roi_image = self.crop(in_image, long_image, short_image, gt_image, roi_image)
             if random.random() > 0.9:
                 long_image = self.strong_pan(long_image)
                 short_image = self.strong_pan(short_image)
-
+            if random.random() > 0.9:
+                in_image = in_image + in_image * (torch.rand(1) * 0.5 - 0.25)
+            if random.random() > 0.9:
+                long_image = long_image + long_image * (torch.rand(1) * 0.5 - 0.25)
+            if random.random() > 0.9:
+                short_image = short_image + short_image * (torch.rand(1) * 0.5 - 0.25)
+                
+                
         X = torch.cat([in_image, long_image, short_image], dim=0)
+        if self.mode == "train":
+            if random.random() > 0.7:
+                X = X + X * (torch.rand(X.shape[0])[:,None,None] * 0.5 - 0.25)
+                # need to be += not =?
+
+                
         ROI = transforms.functional.resize(roi_image, (512, 512))
         Y = gt_image
         Y = transforms.functional.resize(Y, (512, 512))
         X, Y, ROI = X/255, Y/255, ROI/255
         if self.mode == 'train':
-            X = self.noise(X)
+            if random.random() > 0.8: 
+                X = self.noise(X)
+            if random.random() > 0.5:
+                # flip
+                X = torchvision.transforms.functional.hflip(X)
+                Y = torchvision.transforms.functional.hflip(Y)
+                ROI = torchvision.transforms.functional.hflip(ROI)
+
             
         Y = (Y > 0.95).float()
+
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
     
         # return {
