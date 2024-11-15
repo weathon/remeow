@@ -95,7 +95,7 @@ class trainer:
 
                 self.running_loss = []
                 self.running_f1 = []
-                self.lr_scheduler.step()
+                self.lr_scheduler.step(val_running_f1 / len(self.val_dataloader))
                 self.step += 1
                 if self.step >= 1000:
                     raise StopIteration

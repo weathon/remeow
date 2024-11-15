@@ -25,16 +25,17 @@ class CustomDataset(Dataset):
             self.image_names = image_names 
             self.transform = transforms.Compose([
                 transforms.ToImage(),
-                                transforms.RandomApply([
+            ])
+            self.bg_trans = transforms.Compose([
+                 transforms.RandomApply([
                     transforms.GaussianBlur((3,13), 1), 
-                ], 0.3),
-                transforms.RandomApply([
-                    transforms.RandomRotation((-5,5)),
-                ], 0.3),
-                transforms.RandomApply([
-                    transforms.RandomResizedCrop((512, 512), scale=(0.98, 1.02)),
-                ], 0.3),
-                transforms.Resize((512, 512)),
+                    ], 0.5),
+                    transforms.RandomApply([
+                        transforms.RandomRotation((-10,10)),
+                    ], 0.5),
+                    transforms.RandomApply([ 
+                        transforms.RandomResizedCrop((512, 512), scale=(0.98, 1.02)),
+                    ], 0.5),
             ])
         else:
             self.image_names = random.sample(image_names, 1024)
@@ -119,14 +120,17 @@ class CustomDataset(Dataset):
                 in_image, long_image, short_image, gt_image, roi_image = self.crop(in_image, long_image, short_image, gt_image, roi_image)
             if random.random() > 0.9:
                 long_image = self.strong_pan(long_image)
-                short_image = self.strong_pan(short_image)
+                short_image = self.weak_pan(short_image) 
             if random.random() > 0.9:
                 in_image = in_image + in_image * (torch.rand(1) * 0.5 - 0.25)
             if random.random() > 0.9:
                 long_image = long_image + long_image * (torch.rand(1) * 0.5 - 0.25)
             if random.random() > 0.9:
                 short_image = short_image + short_image * (torch.rand(1) * 0.5 - 0.25)
-                
+            if random.random() > 0.7:
+                short_image = self.bg_trans(short_image)
+            if random.random() > 0.7:
+                long_image = self.bg_trans(long_image)
                 
         X = torch.cat([in_image, long_image, short_image], dim=0)
         if self.mode == "train":
