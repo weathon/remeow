@@ -579,29 +579,30 @@ class TwoStreamSegformerEncoder(nn.Module):
                 layer_outputs = blk(hidden_states, height, width, output_attentions)
                 
                 hidden_states = layer_outputs[0]
-                # print(hidden_states.shape)
+                _, SeqLen, Dim = hidden_states.shape
+                RealBatch = batch_size // 3
                 # hidden_states.shape = (RealBatch * 3, SeqLen, Dim)  NOT 3B but B3
                 
-                hidden_states = hidden_states.reshape(batch_size//3, 3, hidden_states.shape[1], hidden_states.shape[2])
-                # hidden_states.shape = (B, 3, SeqLen, Dim)
+                hidden_states = torch.stack(torch.split(hidden_states, batch_size//3))
+                assert hidden_states.shape == (3, RealBatch, SeqLen, Dim)
                 
-                hidden_states = hidden_states.permute(0, 2, 1, 3)
-                # hidden_states.shape = (B, SeqLen, 3, Dim)
+                hidden_states = hidden_states.permute(1, 2, 0, 3)
+                assert hidden_states.shape == (RealBatch, SeqLen, 3, Dim)
                 
-                hidden_states = hidden_states.reshape(hidden_states.shape[0] * hidden_states.shape[1], 3, hidden_states.shape[3])
-                # hidden_states.shape = (B * SeqLen, 3, Dim)
+                hidden_states = hidden_states.reshape(RealBatch * SeqLen, 3, Dim)
+                assert hidden_states.shape == (RealBatch * SeqLen, 3, Dim)
                 
                 hidden_states = bca(hidden_states)
-                # hidden_states.shape = (B * SeqLen, 3, Dim)
+                assert hidden_states.shape == (RealBatch * SeqLen, 3, Dim)
                 
-                hidden_states = hidden_states.reshape(batch_size//3, hidden_states.shape[0]//(batch_size//3), 3, hidden_states.shape[2])
-                # hidden_states.shape = (B, SeqLen, 3, Dim)
+                hidden_states = hidden_states.reshape(RealBatch, SeqLen, 3, Dim)
+                assert hidden_states.shape == (RealBatch, SeqLen, 3, Dim)
                 
-                hidden_states = hidden_states.permute(0, 2, 1, 3)
-                # hidden_states.shape = (B, 3, SeqLen, Dim)
+                hidden_states = hidden_states.permute(2, 0, 1, 3)
+                assert hidden_states.shape == (3, RealBatch, SeqLen, Dim)
                 
-                hidden_states = hidden_states.reshape(batch_size, hidden_states.shape[2], hidden_states.shape[3])
-                # hidden_states.shape = (RealBatch * 3, SeqLen, Dim)
+                hidden_states = hidden_states.reshape(3 * RealBatch, SeqLen, Dim)
+                assert hidden_states.shape == (3 * RealBatch, SeqLen, Dim)
                 
                 
                 
