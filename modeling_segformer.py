@@ -543,7 +543,8 @@ class TwoStreamSegformerEncoder(nn.Module):
             heads = d//16
             # print(i, d, heads) 
             # BCAs.append(BCA(d)) 
-            BCAs.append(torch.nn.TransformerEncoderLayer(d, heads, dropout=0.2) if i>0 else nn.Identity())
+            # forgot batch first
+            BCAs.append(torch.nn.TransformerEncoderLayer(d, heads, dropout=0.2, batch_first=True) if i>0 else nn.Identity())
             blocks.append(nn.ModuleList(layers))
 
         self.block = nn.ModuleList(blocks)
@@ -577,42 +578,33 @@ class TwoStreamSegformerEncoder(nn.Module):
             for i, blk in enumerate(block_layer):
                 layer_outputs = blk(hidden_states, height, width, output_attentions)
                 
-                # hidden_states = layer_outputs[0] 
-                # current_frame, long_frame, short_frame = torch.split(hidden_states, batch_size//3, dim=0)
-
-                # current_frame = bca(current_frame, long_frame, short_frame)
-                # hidden_states = torch.cat([current_frame, long_frame, short_frame], dim=0) 
-                
-                # print(hidden_states.shape) 
                 hidden_states = layer_outputs[0]
-                # hidden_states.shape = 3B, L, D
-                hidden_states = hidden_states.reshape(3, batch_size // 3, hidden_states.shape[1], hidden_states.shape[2])
-
-                #hidden_states.shape = 3, B, L, D
-
-                hidden_states = hidden_states.permute(1, 2, 0, 3)
-                # hidden_states.shape = B, L, 3, D
-
-                hidden_states = hidden_states.reshape(hidden_states.shape[0] * hidden_states.shape[1], hidden_states.shape[2], hidden_states.shape[3])
-                # hidden_states.shape = BL, 3, D
-                # print(idx * 2 + i, hidden_states.shape)
                 # print(hidden_states.shape)
-                # res = []
-                # for hidden_state_split in torch.split(hidden_states, batch_size//3, dim=0):  this is much slower than chunk
-                # for hidden_state_split in torch.chunk(hidden_states, 8, dim=0): 
-                hidden_states = bca(hidden_states) 
-                # res.append(bca(hidden_state_split))
-                # print(hidden_states.shape)  use chunk very fast split slow haishisuduwetiduzihuxikunduziyunxueyahuxikunhaideixiangabnd
+                # hidden_states.shape = (RealBatch * 3, SeqLen, Dim)  NOT 3B but B3
                 
-                # hidden_states.shape = BL, 3, D
-                # hidden_states = torch.cat(res, dim=0)
-
-                hidden_states = hidden_states.reshape(batch_size//3, hidden_states.shape[0]//(batch_size//3), hidden_states.shape[1], hidden_states.shape[2])
-                hidden_states = hidden_states.permute(2, 0, 1, 3)
-                # hidden_states.shape = 3, B, L, D
-
-                hidden_states = torch.cat([hidden_states[0], hidden_states[1], hidden_states[2]], dim=0)
-                # hidden_states.shape = 3B, L, D
+                hidden_states = hidden_states.reshape(batch_size//3, 3, hidden_states.shape[1], hidden_states.shape[2])
+                # hidden_states.shape = (B, 3, SeqLen, Dim)
+                
+                hidden_states = hidden_states.permute(0, 2, 1, 3)
+                # hidden_states.shape = (B, SeqLen, 3, Dim)
+                
+                hidden_states = hidden_states.reshape(hidden_states.shape[0] * hidden_states.shape[1], 3, hidden_states.shape[3])
+                # hidden_states.shape = (B * SeqLen, 3, Dim)
+                
+                hidden_states = bca(hidden_states)
+                # hidden_states.shape = (B * SeqLen, 3, Dim)
+                
+                hidden_states = hidden_states.reshape(batch_size//3, hidden_states.shape[0]//(batch_size//3), 3, hidden_states.shape[2])
+                # hidden_states.shape = (B, SeqLen, 3, Dim)
+                
+                hidden_states = hidden_states.permute(0, 2, 1, 3)
+                # hidden_states.shape = (B, 3, SeqLen, Dim)
+                
+                hidden_states = hidden_states.reshape(batch_size, hidden_states.shape[2], hidden_states.shape[3])
+                # hidden_states.shape = (RealBatch * 3, SeqLen, Dim)
+                
+                
+                
 
                 if output_attentions:
                     all_self_attentions = all_self_attentions + (layer_outputs[1],)
