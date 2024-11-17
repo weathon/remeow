@@ -8,17 +8,17 @@ from PIL import Image
 class MyModel(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
-        config = SegformerConfig.from_pretrained("nvidia/segformer-b2-finetuned-ade-512-512")
+        config = SegformerConfig.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
         config.hidden_dropout_prob = args.hidden_dropout_prob
         config.attention_probs_dropout_prob = args.attention_probs_dropout_prob
         config.drop_path_rate = args.drop_path_rate
         config.classifier_dropout = args.classifier_dropout
-        self.backbone = TwoStreamSegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b2-finetuned-ade-512-512", config=config)
-        self.backbone.decode_head.classifier = torch.nn.Identity() # need this!!!! was not able to train
+        self.backbone = TwoStreamSegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512", config=config)
+        self.backbone.decode_head.classifier = torch.nn.Identity()
         
         self.proj = torch.nn.Sequential(
             torch.nn.Dropout2d(0.1), 
-            torch.nn.Conv2d(768, 1, kernel_size=(1 ,1), padding="same")
+            torch.nn.Conv2d(256, 1, kernel_size=(1 ,1), padding="same")
         )
             
     

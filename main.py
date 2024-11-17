@@ -34,10 +34,10 @@ lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
 train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 2, "train")
 val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 2, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=2, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
 
-def iou_loss(pred, target, ROI):
+def iou_loss(pred, target, ROI): 
     assert pred.shape == target.shape == ROI.shape
     # print(torch.sigmoid(pred).max(), ROI.max(), target.max())
     # pred = torch.sigmoid(pred)[ROI>0.9] hu xi 
@@ -53,7 +53,8 @@ loss_fn = iou_loss
 wandb.init(project="Remeow")
 wandb.define_metric("pstep")
 logger = wandb
-model = torch.nn.DataParallel(model).cuda()
+# model = torch.nn.DataParallel(model).cuda()
+model = model.cuda()
 # model.load_state_dict(torch.load("model.pth"))
 trainer = trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn)
 
