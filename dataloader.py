@@ -16,7 +16,8 @@ class CustomDataset(Dataset):
         txt_file = os.path.join(val_path, f'{mode}_{fold}.txt')
         with open(txt_file, 'r') as f:
             image_names = f.read().split("\n")
-
+        self.mean = torch.tensor([0.485, 0.456, 0.406] * 3)
+        self.std = torch.tensor([0.229, 0.224, 0.225] * 3)
         if mode == 'train':
             # self.image_names = []
             # for name in image_names:
@@ -36,19 +37,21 @@ class CustomDataset(Dataset):
                     transforms.RandomApply([ 
                         transforms.RandomResizedCrop((512, 512), scale=(0.98, 1.02)),
                     ], 0.5),
+
             ])
         else:
-            self.image_names = random.sample(image_names, 1024)
+            self.image_names = random.sample(image_names, 512)
             self.transform = transforms.Compose([
                 transforms.ToImage(),
+
             ])
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
-         
+
 
     def crop(self, in_image, long_image, short_image, gt_image, roi_image):
-        top = random.randint(0, 256)
-        left = random.randint(0, 256)
-        width = random.randint(256, 512)
+        top = random.randint(0, 128)
+        left = random.randint(0, 128)
+        width = random.randint(512 - 128, 512)
         aspect_ratio = random.uniform(0.5, 1.5)
         height = int(width * aspect_ratio)
         
@@ -116,8 +119,8 @@ class CustomDataset(Dataset):
 
         long_image, short_image, gt_image, in_image, roi_image = self.transform(long_image, short_image, gt_image, in_image, roi_image)
         if self.mode == 'train':
-            if random.random() > 0.8:
-                in_image, long_image, short_image, gt_image, roi_image = self.crop(in_image, long_image, short_image, gt_image, roi_image)
+            # if random.random() > 0.8:
+            #     in_image, long_image, short_image, gt_image, roi_image = self.crop(in_image, long_image, short_image, gt_image, roi_image)
             if random.random() > 0.9:
                 long_image = self.strong_pan(long_image)
                 short_image = self.weak_pan(short_image) 
@@ -155,6 +158,8 @@ class CustomDataset(Dataset):
             
         Y = (Y > 0.95).float()
 
+        X = transforms.functional.normalize(X, self.mean, self.std)
+        
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
     
         # return {

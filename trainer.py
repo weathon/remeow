@@ -26,14 +26,15 @@ class trainer:
         self.optimizer.step()
         e = 1e-6
         # pred = torch.sigmoid(pred)
-        pred = pred[ROI > 0.9] > 0.5
-        pred = pred.float()
+        pred_ = pred[ROI > 0.9] > 0.5
+        pred_ = pred_.float()
         Y = Y[ROI > 0.9] > 0.5
         Y = Y.float()
-        f1 = ((2 * pred * Y).sum() + e) / ((pred + Y).sum() + e)
+        f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
         
         self.running_loss += [loss.item()]
         self.running_f1 += [f1.item()]
+        return pred.float()
 
     def validate(self, X, Y, ROI):
         self.model.eval()
@@ -61,16 +62,16 @@ class trainer:
         import tqdm
         pred = torch.zeros((1, 512, 512)).cuda()
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
-            self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
+            train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
-            if train_i%300 == 0: 
-                train_pred = pred 
+            if train_i%100 == 0: 
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 print(f"\n Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
                 for val_i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
                     # print(val_ROI[0].max())
                     val_loss, val_f1, val_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
+                    # print(val_f1
                     val_runnning_loss += val_loss
                     val_running_f1 += val_f1
                 # print(ROI[0].max(), val_ROI[0].max())

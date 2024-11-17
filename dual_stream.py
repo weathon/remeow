@@ -18,7 +18,7 @@ class MyModel(torch.nn.Module):
         
         self.proj = torch.nn.Sequential(
             torch.nn.Dropout2d(0.1), 
-            torch.nn.Conv2d(256, 1, kernel_size=(1 ,1), padding="same")
+            torch.nn.Conv2d(768, 1, kernel_size=(1 ,1), padding="same")
         )
             
     
