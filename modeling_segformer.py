@@ -589,7 +589,8 @@ class TwoStreamSegformerEncoder(nn.Module):
                 hidden_states = hidden_states.permute(1, 2, 0, 3)
                 assert hidden_states.shape == (RealBatch, SeqLen, 3, Dim)
                 
-                hidden_states = hidden_states.reshape(RealBatch * SeqLen, 3, Dim)
+                # hidden_states = hidden_states.reshape(RealBatch * SeqLen, 3, Dim)
+                hidden_states = hidden_states.flatten(0, 1)
                 assert hidden_states.shape == (RealBatch * SeqLen, 3, Dim)
                 
                 hidden_states = bca(hidden_states)
@@ -601,7 +602,8 @@ class TwoStreamSegformerEncoder(nn.Module):
                 hidden_states = hidden_states.permute(2, 0, 1, 3)
                 assert hidden_states.shape == (3, RealBatch, SeqLen, Dim)
                 
-                hidden_states = hidden_states.reshape(3 * RealBatch, SeqLen, Dim)
+                # hidden_states = hidden_states.reshape(3 * RealBatch, SeqLen, Dim)
+                hidden_states = hidden_states.flatten(0, 1)
                 assert hidden_states.shape == (3 * RealBatch, SeqLen, Dim)
                 
                 
