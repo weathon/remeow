@@ -17,7 +17,7 @@ class MyModel(nn.Module):
         
             
         self.head = torch.nn.Sequential(
-            nn.Conv2d(8, 1, 3), 
+            nn.Conv2d(8, 1, 3), #changed size
             nn.Sigmoid()
         )
         self.c = torch.nn.Parameter(torch.tensor(1.0))
