@@ -48,29 +48,38 @@ class MyModel(nn.Module):
         self.args = args
         self.backbone = backbone
         self.backbone.decode_head.classifier = nn.Identity()
-        for param in self.backbone.parameters():
+        for param in self.backbone.parameters(): 
             param.requires_grad = False
 
         self.bcas = torch.nn.ModuleList([BCA() for _ in range(4)])
 
-    def forward(self, in_img, long_img, short_img):
-        in_img = torch.nn.functional.interpolate(in_img, size=(640, 640), mode="bilinear", align_corners=False)
-        long_img = torch.nn.functional.interpolate(long_img, size=(640, 640), mode="bilinear", align_corners=False)
-        short_img = torch.nn.functional.interpolate(short_img, size=(640, 640), mode="bilinear", align_corners=False)
+        self.head = nn.Conv2d(512, 1, 1)
+    def forward(self, X):
+        X = torch.nn.functional.interpolate(X, size=(640, 640), mode="bilinear", align_corners=False)
+        in_img = X[:, :3]
+        long_img = X[:, 3:6]
+        short_img = X[:, 6:9]
         
+        X = torch.cat([in_img, long_img, short_img], dim=0)
+
         for bca in self.bcas:
-            in_feature = self.backbone(in_img).logits
-            long_feature = self.backbone(long_img).logits
-            short_feature = self.backbone(short_img).logits 
+            # in_feature = self.backbone(in_img).logits
+            # long_feature = self.backbone(long_img).logits
+            # short_feature = self.backbone(short_img).logits 
+            X_features = self.backbone(X).logits
+            in_feature = X_features[:3]
+            long_feature = X_features[3:6]
+            short_feature = X_features[6:9]
+            
             pred = bca(in_feature, long_feature, short_feature)
             in_feature = pred
 
 
 
         pred = torch.nn.functional.interpolate(pred, size=(512, 512), mode="bilinear", align_corners=False)
-        return pred
+        return self.head(pred)
 
 if __name__ == "__main__":
     model = MyModel(None)
-    x = torch.randn(2, 3, 512, 512)
-    print(model(x, x, x).shape)
+    x = torch.randn(2, 9, 512, 512)
+    print(model(x).shape)
