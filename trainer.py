@@ -31,7 +31,7 @@ class trainer:
         pred = self.model(X).squeeze(1) 
         loss = self.loss_fn(pred, Y, ROI)
         # self.scaler.scale(loss).backward()
-        loss.backward()
+        loss.backward() 
         self.optimizer.step()
         e = 1e-6
         # pred = torch.sigmoid(pred)
@@ -45,7 +45,7 @@ class trainer:
         self.running_f1 += [f1.item()]
         return pred.float()
 
-    def validate(self, X, Y, ROI):
+    def validate(self, X, Y, ROI): 
         self.model.eval()
         with torch.no_grad():
             pred = self.model(X).squeeze(1)
@@ -53,7 +53,7 @@ class trainer:
             e = 1e-6
             # pred = torch.sigmoid(pred)
             pred_ = pred[ROI > 0.9] > 0.5
-            pred = torch.where(ROI > 0.9, pred, 0)
+            pred = torch.where(ROI > 0.9, pred, 0) 
             pred_ = pred_.float()
             Y = Y[ROI > 0.9] > 0.5
             Y = Y.float()

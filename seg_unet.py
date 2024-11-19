@@ -13,16 +13,18 @@ class MyModel(nn.Module):
         self.backbone.decode_head.classifier = torch.nn.Identity()
         self.proj = torch.nn.Conv2d(768 * 2, 128, 1)
         # u-net like decoder 
-        self.unet = UNet(in_channels=128, out_channels=1)
+        self.unet = UNet(in_channels=128, out_channels=8)
         
-        for param in self.backbone.parameters(): 
-            param.requires_grad = False
             
         self.head = torch.nn.Sequential(
-            # nn.Conv2d(8, 1, 3), 
+            nn.Conv2d(8, 1, 3), 
             nn.Sigmoid()
         )
         self.c = torch.nn.Parameter(torch.tensor(1.0))
+        
+        for param in self.parameters(): 
+            param.requires_grad = True
+            
         for backbone_param in self.backbone.parameters():
             backbone_param.requires_grad = False
             
@@ -51,3 +53,10 @@ if __name__ == "__main__":
     model = MyModel(None)
     x = torch.randn(2, 9, 512, 512)
     print(model(x).shape)
+    model(x).mean().backward()
+    grads = []
+    for param in model.parameters():
+        if param.grad is not None:
+            grads.append(param.grad.view(-1).cpu())
+    grads = torch.cat(grads)
+    print(F"Max grad: {grads.abs().max()}")

@@ -31,7 +31,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 model = MyModel(args)
 # model = ISNetBackbone(args)
-optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=1.4e-2)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
 
 # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps)
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, verbose=True, cooldown=5) 
@@ -40,8 +40,8 @@ lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
 train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 1, "train")
 val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 1, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=4, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
 
 def iou_loss(pred, target, ROI): 
     assert pred.shape == target.shape == ROI.shape, f"pred shape: {pred.shape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
