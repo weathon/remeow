@@ -7,7 +7,7 @@ import numpy as np
 import random
 import torchvision
 from transformers import AutoImageProcessor
-image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
+image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512")
 
 class CustomDataset(Dataset):
     def __init__(self, train_path, val_path, fold, mode='train'):

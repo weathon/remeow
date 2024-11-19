@@ -63,7 +63,7 @@ class trainer:
     def train_epoch(self):
         import tqdm
         pred = torch.zeros((1, 512, 512)).cuda()
-        self.scaler = torch.GradScaler()
+        # self.scaler = torch.GradScaler()
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
