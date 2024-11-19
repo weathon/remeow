@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import f1_score
 class trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
-        self.model = model
+        self.model = model.cuda()
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self.train_dataloader = train_dataloader
@@ -20,9 +20,11 @@ class trainer:
     def train_step(self, X, Y, ROI):       
         self.model.train()
         self.optimizer.zero_grad()
-        pred = self.model(X).squeeze(1) 
+        with torch.autocast(device_type='cuda', dtype=torch.float16):
+            pred = self.model(X).squeeze(1) 
         loss = self.loss_fn(pred, Y, ROI)
-        loss.backward()
+        self.scaler.scale(loss).backward()
+
         self.optimizer.step()
         e = 1e-6
         # pred = torch.sigmoid(pred)
@@ -61,6 +63,7 @@ class trainer:
     def train_epoch(self):
         import tqdm
         pred = torch.zeros((1, 512, 512)).cuda()
+        self.scaler = torch.GradScaler()
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())

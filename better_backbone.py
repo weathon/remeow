@@ -7,17 +7,17 @@ backbone = BeitForSemanticSegmentation.from_pretrained("microsoft/beit-base-fine
 class BCA(nn.Module):
     def __init__(self):
         super(BCA, self).__init__()
-        self.q_proj = nn.Conv2d(768, 512, 1)
-        self.k_proj = nn.Conv2d(768, 512, 1)
-        self.v_proj = nn.Conv2d(768, 512, 1)
+        self.q_proj = nn.Conv2d(192, 256, 1)
+        self.k_proj = nn.Conv2d(192, 256, 1)
+        self.v_proj = nn.Conv2d(192, 256, 1)
         self.softmax = nn.Softmax(dim=1)
-        self.norm1 = nn.LayerNorm(512)
+        self.norm1 = nn.LayerNorm(256)
         self.mlp = nn.Sequential(
-            nn.Linear(512, 768, 1),
+            nn.Linear(256, 768, 1),
             nn.ReLU(),
-            nn.Linear(768, 512, 1)
+            nn.Linear(768, 256, 1)
         )
-        self.norm2 = nn.LayerNorm(512)
+        self.norm2 = nn.LayerNorm(256)
 
     def forward(self, q, k, v):
         B, _, H, W = q.shape
@@ -55,7 +55,7 @@ class MyModel(nn.Module):
 
         self.head = nn.Conv2d(512, 1, 1)
     def forward(self, X):
-        X = torch.nn.functional.interpolate(X, size=(640, 640), mode="bilinear", align_corners=False)
+        X = torch.nn.functional.interpolate(X, size=(320, 320), mode="bilinear", align_corners=False)
         in_img = X[:, :3]
         long_img = X[:, 3:6]
         short_img = X[:, 6:9]
@@ -67,9 +67,7 @@ class MyModel(nn.Module):
             # long_feature = self.backbone(long_img).logits
             # short_feature = self.backbone(short_img).logits 
             X_features = self.backbone(X).logits
-            in_feature = X_features[:3]
-            long_feature = X_features[3:6]
-            short_feature = X_features[6:9]
+            in_feature, long_feature, short_feature = torch.split(X_features, len(X_features)//3, dim=0)
             
             pred = bca(in_feature, long_feature, short_feature)
             in_feature = pred

@@ -16,17 +16,20 @@ import numpy as np
 from PIL import Image
 # from model import MyModel
 # from dual_stream import MyModel
-from better_backbone import MyModel
+# from better_backbone import MyModel
+from hand_attention import MyModel
 from trainer import trainer
 from is_net_backbone import ISNetBackbone
 
 from dataloader import CustomDataset
 import wandb 
 
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 model = MyModel(args)
 # model = ISNetBackbone(args)
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
 
 # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps)
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, verbose=True, cooldown=5) 
@@ -39,7 +42,7 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuf
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
 
 def iou_loss(pred, target, ROI): 
-    assert pred.shape == target.shape == ROI.shape
+    assert pred.shape == target.shape == ROI.shape, f"pred shape: {pred.shape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
     # print(torch.sigmoid(pred).max(), ROI.max(), target.max())
     # pred = torch.sigmoid(pred)[ROI>0.9] hu xi 
     pred = pred[ROI>0.9]
@@ -54,8 +57,7 @@ loss_fn = iou_loss
 wandb.init(project="Remeow")
 wandb.define_metric("pstep")
 logger = wandb
-# model = torch.nn.DataParallel(model).cuda()
-model = model.cuda()
+# model = torch.nn.DataParallel(model)
 # model.load_state_dict(torch.load("model.pth"))
 trainer = trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn)
 
