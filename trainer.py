@@ -77,10 +77,10 @@ class trainer:
             if train_i%100 == 0: 
                 if train_i != 0:
                     grad = self.getgrad()
-                    print(f"Mean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
+                    print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
                     self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
-                print(f"\n Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
+                print(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
                 for val_i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
                     # print(val_ROI[0].max())

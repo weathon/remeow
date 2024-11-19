@@ -13,17 +13,19 @@ class MyModel(nn.Module):
         self.backbone.decode_head.classifier = torch.nn.Identity()
         self.proj = torch.nn.Conv2d(768 * 2, 128, 1)
         # u-net like decoder 
-        self.unet = UNet(in_channels=128, out_channels=8)
+        self.unet = UNet(in_channels=128, out_channels=1)
         
         for param in self.backbone.parameters(): 
             param.requires_grad = False
             
         self.head = torch.nn.Sequential(
-            nn.Conv2d(8, 1, 3),
+            # nn.Conv2d(8, 1, 3), 
             nn.Sigmoid()
         )
         self.c = torch.nn.Parameter(torch.tensor(1.0))
-        
+        for backbone_param in self.backbone.parameters():
+            backbone_param.requires_grad = False
+            
     def forward(self, X):
         X = torch.nn.functional.interpolate(X, size=(512, 512), mode="bilinear", align_corners=False)
         in_img = X[:, :3]
