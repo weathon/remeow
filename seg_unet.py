@@ -25,8 +25,8 @@ class MyModel(nn.Module):
         for param in self.parameters(): 
             param.requires_grad = True
             
-        for backbone_param in self.backbone.parameters():
-            backbone_param.requires_grad = False
+        # for backbone_param in self.backbone.parameters():
+        #     backbone_param.requires_grad = False
             
     def forward(self, X):
         X = torch.nn.functional.interpolate(X, size=(512, 512), mode="bilinear", align_corners=False)
@@ -44,7 +44,7 @@ class MyModel(nn.Module):
         in_feature1 = diff1 * in_feature
         in_feature2 = diff2 * in_feature
         
-        pred = self.unet(torch.nn.functional.relu(self.proj(torch.cat([in_feature1, in_feature2], dim=1))))
+        pred = self.unet(self.proj(torch.cat([in_feature1, in_feature2], dim=1)))
         pred = self.head(pred)
         pred = torch.nn.functional.interpolate(pred, size=(512, 512), mode="bilinear", align_corners=False)
         return pred

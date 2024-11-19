@@ -17,7 +17,7 @@ class trainer:
         self.validate_f1 = False
 
     def getgrad(self):
-        grads = [torch.tensor([])] #it was just [0] 
+        grads = [] #it was just [0] 
         for param in self.model.parameters():
             if param.grad is not None: #why need this
                 grads.append(param.grad.view(-1).cpu())
@@ -74,11 +74,11 @@ class trainer:
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
+            if train_i != 0:
+                grad = self.getgrad()
+                print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
+                self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
             if train_i%100 == 0: 
-                if train_i != 0:
-                    grad = self.getgrad()
-                    print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
-                    self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 print(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0

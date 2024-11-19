@@ -153,6 +153,8 @@ class CustomDataset(Dataset):
         # X, Y, ROI = X/255, Y/255, ROI/255
         Y = Y/255
         ROI = ROI/255
+        ROI[0,0]=1
+        ROI[0,1]=0
         if self.mode == 'train':
             if random.random() > 0.8: 
                 X = self.noise(X)
