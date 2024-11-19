@@ -15,9 +15,8 @@ import torch
 import numpy as np
 from PIL import Image
 # from model import MyModel
-from dual_stream import MyModel
-# from seg_mha import MyModel
-# from simple_conv import MyModel
+# from dual_stream import MyModel
+from better_backbone import MyModel
 from trainer import trainer
 from is_net_backbone import ISNetBackbone
 
