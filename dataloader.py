@@ -161,7 +161,12 @@ class CustomDataset(Dataset):
                 X = torchvision.transforms.functional.hflip(X)
                 Y = torchvision.transforms.functional.hflip(Y)
                 ROI = torchvision.transforms.functional.hflip(ROI)
-
+            if random.random() > 0.5:
+                angle = random.randint(-90, 90)
+                X = torchvision.transforms.functional.rotate(X, angle)
+                Y = torchvision.transforms.functional.rotate(Y, angle)
+                ROI = torchvision.transforms.functional.rotate(ROI, angle)
+                
             
         Y = (Y > 0.95).float()
 

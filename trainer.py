@@ -17,7 +17,7 @@ class trainer:
         self.validate_f1 = False
 
     def getgrad(self):
-        grads = [torch.tensor([0])] #it was just [0]
+        grads = [torch.tensor([])] #it was just [0] 
         for param in self.model.parameters():
             if param.grad is not None: #why need this
                 grads.append(param.grad.view(-1).cpu())
