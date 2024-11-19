@@ -20,11 +20,11 @@ class trainer:
     def train_step(self, X, Y, ROI):       
         self.model.train()
         self.optimizer.zero_grad()
-        with torch.autocast(device_type='cuda', dtype=torch.float16):
-            pred = self.model(X).squeeze(1) 
+        # with torch.autocast(device_type='cuda', dtype=torch.float16):
+        pred = self.model(X).squeeze(1) 
         loss = self.loss_fn(pred, Y, ROI)
-        self.scaler.scale(loss).backward()
-
+        # self.scaler.scale(loss).backward()
+        loss.backward()
         self.optimizer.step()
         e = 1e-6
         # pred = torch.sigmoid(pred)
