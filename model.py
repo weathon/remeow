@@ -48,7 +48,7 @@ class MyModel(torch.nn.Module):
             torch.nn.Dropout2d(0.1),
             torch.nn.ReLU(), 
             torch.nn.Conv2d(32, 1, kernel_size=(7, 7), stride=(1, 1), padding="same"),
-            torch.nn.Sigmoid()
+            
         )        
         
     def forward(self, X):

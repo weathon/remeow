@@ -14,11 +14,12 @@ from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmenta
 import torch
 import numpy as np
 from PIL import Image
-from model import MyModel
+# from model import MyModel
 # from dual_stream import MyModel
 # from better_backbone import MyModel
 # from hand_attention import MyModel
-# from seg_unet import MyModel
+from seg_unet import MyModel
+# from simple_conv import MyModel
 from trainer import trainer
 from is_net_backbone import ISNetBackbone
 
@@ -26,11 +27,11 @@ from dataloader import CustomDataset
 import wandb 
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 model = MyModel(args)
 # model = ISNetBackbone(args)
-optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=3e-3)
 
 # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps)
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, verbose=True, cooldown=5) 
