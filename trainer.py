@@ -17,10 +17,10 @@ class trainer:
         self.validate_f1 = False
 
     
-    def train_step(self, X, Y, ROI):
+    def train_step(self, X, Y, ROI):       
         self.model.train()
         self.optimizer.zero_grad()
-        pred = self.model(X).squeeze(1)
+        pred = self.model(X).squeeze(1) 
         loss = self.loss_fn(pred, Y, ROI)
         loss.backward()
         self.optimizer.step()
@@ -64,7 +64,7 @@ class trainer:
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
-            if train_i%100 == 0: 
+            if train_i%300 == 0: 
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 print(f"\n Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0

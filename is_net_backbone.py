@@ -1,6 +1,8 @@
 # %%
 import sys
 sys.path.append("./DIS/IS-Net")
+from models import *
+
 import os
 import time
 import numpy as np
@@ -16,7 +18,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision.transforms.functional import normalize
 
-from models import *
 
 class ISNetBackbone(nn.Module):
     def __init__(self, args):

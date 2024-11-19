@@ -6,6 +6,8 @@ import torch
 import numpy as np
 import random
 import torchvision
+from transformers import AutoImageProcessor
+image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
 
 class CustomDataset(Dataset):
     def __init__(self, train_path, val_path, fold, mode='train'):
@@ -40,7 +42,7 @@ class CustomDataset(Dataset):
 
             ])
         else:
-            self.image_names = random.sample(image_names, 512)
+            self.image_names = random.sample(image_names, 128)
             self.transform = transforms.Compose([
                 transforms.ToImage(),
 
@@ -49,9 +51,9 @@ class CustomDataset(Dataset):
 
 
     def crop(self, in_image, long_image, short_image, gt_image, roi_image):
-        top = random.randint(0, 128)
-        left = random.randint(0, 128)
-        width = random.randint(512 - 128, 512)
+        top = random.randint(0, 256)
+        left = random.randint(0, 256) 
+        width = random.randint(512 - 256, 512)
         aspect_ratio = random.uniform(0.5, 1.5)
         height = int(width * aspect_ratio)
         
@@ -134,7 +136,10 @@ class CustomDataset(Dataset):
                 short_image = self.bg_trans(short_image)
             if random.random() > 0.7:
                 long_image = self.bg_trans(long_image)
-                
+        # print(f"Mode: {self.mode}, in_max: {in_image.max()}, long_max: {long_image.max()}, short_max: {short_image.max()}, gt_max: {gt_image.max()}, roi_max: {roi_image.max()}")
+        in_image = image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+        long_image = image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+        short_image = image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         X = torch.cat([in_image, long_image, short_image], dim=0)
         if self.mode == "train":
             if random.random() > 0.7:
@@ -145,7 +150,9 @@ class CustomDataset(Dataset):
         ROI = transforms.functional.resize(roi_image, (512, 512))
         Y = gt_image
         Y = transforms.functional.resize(Y, (512, 512))
-        X, Y, ROI = X/255, Y/255, ROI/255
+        # X, Y, ROI = X/255, Y/255, ROI/255
+        Y = Y/255
+        ROI = ROI/255
         if self.mode == 'train':
             if random.random() > 0.8: 
                 X = self.noise(X)
@@ -158,7 +165,7 @@ class CustomDataset(Dataset):
             
         Y = (Y > 0.95).float()
 
-        X = transforms.functional.normalize(X, self.mean, self.std)
+        # X = transforms.functional.normalize(X, self.mean, self.std)
         
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
     

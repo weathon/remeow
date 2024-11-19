@@ -22,7 +22,11 @@ class MyModel(torch.nn.Module):
             torch.nn.Sigmoid() # That is why same code not training and untill i saw loss higher than 1 i relizewd 
         )
             
-    
+        for param in self.backbone.parameters(): 
+            param.requires_grad = False
+        
+        for param in self.backbone.segformer.encoder.BCAs.parameters():
+            param.requires_grad = True
     def forward(self, X):
         in_img, long_img, short_img = X[:, :3], X[:, 3:6], X[:, 6:]
         pred = self.backbone(in_img, long_img, short_img).logits 
@@ -45,3 +49,7 @@ if __name__ == '__main__':
     input_tensor = torch.rand(1, 9, 512, 512)
     output = model(input_tensor)
     print(output.shape)
+    print(model.backbone.segformer.encoder.BCAs)
+    
+    
+    
