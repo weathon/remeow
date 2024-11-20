@@ -35,6 +35,7 @@ class UNet(nn.Module):
         return nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
+            nn.Dropout2d(0.1),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
@@ -42,6 +43,7 @@ class UNet(nn.Module):
     def up_conv(self, in_channels, out_channels):
         return nn.Sequential(
             nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2),
+            nn.Dropout2d(0.1),
         )
     
     def forward(self, x):

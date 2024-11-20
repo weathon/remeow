@@ -1,6 +1,12 @@
 import torch
 import numpy as np
 
+def printred(text):
+    print(f"\033[31m{text}\033[0m")
+
+def printgreen(text):
+    print(f"\033[32m{text}\033[0m")
+    
 from sklearn.metrics import f1_score
 class trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
@@ -74,13 +80,17 @@ class trainer:
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
-            if train_i != 0:
-                grad = self.getgrad()
-                print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
-                self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
-            if train_i%100 == 0: 
+            if train_i % 500 == 0:
+                if train_i != 0:
+                    grad = self.getgrad()
+                    print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
+                    self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
+            if train_i % 500 == 0: 
+                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.008
+                for param_group in self.optimizer.param_groups:
+                    param_group['weight_decay'] = weight_decay
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
-                print(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
+                printred(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
                 for val_i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
                     # print(val_ROI[0].max())
@@ -91,6 +101,7 @@ class trainer:
                 # print(ROI[0].max(), val_ROI[0].max())
                 self.logger.log({
                                 "pstep":self.step,
+                                "weight_decay":self.optimizer.param_groups[0]["weight_decay"],
                                 "val_pred": self.logger.Image(val_pred[0].unsqueeze(0)),
                                 "val_gt": self.logger.Image(val_Y[0].unsqueeze(0)),
                                 "val_in": self.logger.Image(val_X[0][:3]),
@@ -106,7 +117,7 @@ class trainer:
                 })
                 
                 self.logger.log({"pstep":self.step, "val_loss": val_runnning_loss / len(self.val_dataloader), "val_f1": val_running_f1 / len(self.val_dataloader)})
-                print(f"Validation Loss: {val_runnning_loss / len(self.val_dataloader)}, Validation F1: {val_running_f1 / len(self.val_dataloader)}")
+                printgreen(f"Validation Loss: {val_runnning_loss / len(self.val_dataloader)}, Validation F1: {val_running_f1 / len(self.val_dataloader)}")
 
                 self.running_loss = []
                 self.running_f1 = []

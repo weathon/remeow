@@ -11,9 +11,17 @@ class MyModel(nn.Module):
         self.args = args
         self.backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512")
         self.backbone.decode_head.classifier = torch.nn.Identity()
-        self.proj = torch.nn.Conv2d(768 * 2, 128, 1)
+        self.proj = torch.nn.Conv2d(768 * 3, 512, 1)
         # u-net like decoder 
-        self.unet = UNet(in_channels=128, out_channels=8)
+        self.unet = torch.nn.Sequential(
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(512, 64, 9),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(64, 32, 9),
+            torch.nn.ReLU(),
+            torch.nn.Conv2d(32, 8, 9),
+            torch.nn.ReLU(),
+        )
         
             
         self.head = torch.nn.Sequential(
@@ -26,7 +34,7 @@ class MyModel(nn.Module):
             param.requires_grad = True
             
         # for backbone_param in self.backbone.parameters():
-        #     backbone_param.requires_grad = False
+        #     backbone_param.requires_grad = False 
             
     def forward(self, X):
         X = torch.nn.functional.interpolate(X, size=(512, 512), mode="bilinear", align_corners=False)
@@ -38,13 +46,14 @@ class MyModel(nn.Module):
         long_feature = self.backbone(long_img).logits
         short_feature = self.backbone(short_img).logits
         
-        diff1 = 1 - torch.nn.functional.cosine_similarity(in_feature, long_feature, dim=1, eps=1e-8).unsqueeze(1)
-        diff2 = 1 - torch.nn.functional.cosine_similarity(in_feature, short_feature, dim=1, eps=1e-8).unsqueeze(1)
+        # diff1 = 1 - torch.nn.functional.cosine_similarity(in_feature, long_feature, dim=1, eps=1e-8).unsqueeze(1)
+        # diff2 = 1 - torch.nn.functional.cosine_similarity(in_feature, short_feature, dim=1, eps=1e-8).unsqueeze(1)
 
-        in_feature1 = diff1 * in_feature
-        in_feature2 = diff2 * in_feature
+        # in_feature1 = diff1 * in_feature
+        # in_feature2 = diff2 * in_feature
         
-        pred = self.unet(self.proj(torch.cat([in_feature1, in_feature2], dim=1)))
+        feature = torch.cat([in_feature, long_feature, short_feature], dim=1)
+        pred = self.unet(self.proj(feature))
         pred = self.head(pred)
         pred = torch.nn.functional.interpolate(pred, size=(512, 512), mode="bilinear", align_corners=False)
         return pred

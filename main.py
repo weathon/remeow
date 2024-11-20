@@ -14,31 +14,31 @@ from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmenta
 import torch
 import numpy as np
 from PIL import Image
-# from model import MyModel
+from video_model import MyModel
 # from dual_stream import MyModel
 # from better_backbone import MyModel
 # from hand_attention import MyModel
-from seg_unet import MyModel
+# from seg_unet import MyModel
 # from simple_conv import MyModel
 from trainer import trainer
 from is_net_backbone import ISNetBackbone
 
-from dataloader import CustomDataset
+from video_dataloader import CustomDataset
 import wandb 
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-model = MyModel(args)
-# model = ISNetBackbone(args)
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+model = MyModel(args) 
+# model = ISNetBackbone(args) 
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.1e-2) 
 
-# lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps)
-lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5, verbose=True, cooldown=5) 
+# lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps) 
+lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=10, verbose=True, cooldown=5, threshold=0.001) 
 # train_dataset = CustomDataset("/mnt/fastdata/preaug_cdnet/", "/mnt/fastdata/CDNet", 4, "train")
 # val_dataset = CustomDataset("/mnt/fastdata/preaug_cdnet/", "/mnt/fastdata/CDNet", 4, "val")
-train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 1, "train")
-val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 1, "val")
+train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 3, "train")
+val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 3, "val")
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=4, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2) 
