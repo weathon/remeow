@@ -11,13 +11,8 @@ from PIL import Image
 class MyModel(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
-        config = SegformerConfig.from_pretrained("nvidia/segformer-b3-finetuned-ade-512-512")
-        config.hidden_dropout_prob = args.hidden_dropout_prob
-        config.attention_probs_dropout_prob = args.attention_probs_dropout_prob
-        config.drop_path_rate = args.drop_path_rate
-        config.classifier_dropout = args.classifier_dropout
-        self.backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-ade-512-512", config=config)
-        self.backbone.decode_head.classifier = torch.nn.Identity()
+        self.backbone = torch.hub.load('facebookresearch/dino:main', 'dino_vits8')
+        # self.backbone.decode_head.classifier = torch.nn.Identity()
         self.decoder = torch.nn.Sequential(
             torch.nn.Conv2d(7, 32, kernel_size=(7, 7), stride=(1, 1), padding="same"),
             torch.nn.ReLU(),
@@ -36,8 +31,7 @@ class MyModel(torch.nn.Module):
             feature2: torch.Tensor, shape (batch_size, C, 128, 128)
             return torch.Tensor, shape (batch_size, 2, 128, 128)
         """
-        feature1 = torch.nn.functional.interpolate(feature1, size=(64, 64), mode='bilinear')
-        feature2 = torch.nn.functional.interpolate(feature2, size=(64, 64), mode='bilinear')
+
         feature1_ = feature1.flatten(2, 3).permute(0, 2, 1)
         feature2_ = feature2.flatten(2, 3).permute(0, 2, 1)
         assert feature1_.shape == feature2_.shape == (feature1.shape[0], 64*64, feature1.shape[1]), f"feature1 shape: {feature1_.shape}, feature2 shape: {feature2_.shape}"
@@ -56,9 +50,9 @@ class MyModel(torch.nn.Module):
         current = X[:, :3]
         long = X[:, -6:-3]
         short = X[:, -3:]
-        current_feature = self.backbone(current).logits
-        long_feature = self.backbone(long).logits
-        short_feature = self.backbone(short).logits
+        current_feature = self.backbone.get_intermediate_layers(current)[0]
+        long_feature = self.backbone.get_intermediate_layers(long)[0]
+        short_feature = self.backbone.get_intermediate_layers(short)[0]
         
         flow1 = self.matching(current_feature, long_feature)
         flow2 = self.matching(current_feature, short_feature)
