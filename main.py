@@ -27,11 +27,11 @@ from video_dataloader import CustomDataset
 import wandb 
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.1e-2) 
+optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4, weight_decay=0.1e-2) 
 
 # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps) 
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=10, verbose=True, cooldown=5, threshold=0.001) 

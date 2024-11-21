@@ -2,6 +2,7 @@ from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmenta
 import torch
 import numpy as np
 from PIL import Image
+from transformers import AutoImageProcessor, TimesformerForVideoClassification
 
 
 # %% 
@@ -19,15 +20,10 @@ class MyModel(torch.nn.Module):
         super().__init__()
         self.backbone = backbone
         self.upsampling = torch.nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False)
-        self.temporal_encoder = torch.nn.Sequential(
-            torch.nn.Conv3d(3, 16, 3), 
-            torch.nn.ReLU(),
-            torch.nn.Conv3d(16, 32, 3),
-            torch.nn.ReLU(),
-            torch.nn.Conv3d(32, 64, 3),
-            torch.nn.ReLU(),
-        )
-            
+        self.processor = AutoImageProcessor.from_pretrained("facebook/timesformer-base-finetuned-k600")
+        self.temporal_encoder = TimesformerForVideoClassification.from_pretrained("facebook/timesformer-base-finetuned-k600")
+        self.temporal_linear = torch.nn.Linear(8, 1)
+        self.dim_linear = torch.nn.Linear(768, 64)
         self.head = torch.nn.Sequential( 
             torch.nn.ReLU(),
             torch.nn.Conv2d(512, 32, kernel_size=(5, 5), stride=(1, 1), padding="same"),
@@ -37,12 +33,27 @@ class MyModel(torch.nn.Module):
             torch.nn.Sigmoid()
         )        
         
+    def encode_video(self, video):
+        # video = self.processor(images=video, return_tensors="pt")
+        video = torch.nn.functional.interpolate(video, size=(3, 224, 224)) 
+        outputs = model.temporal_encoder.timesformer(video).last_hidden_state
+        feature = outputs[:,1:].reshape(-1, 8, 14, 14, 768)
+        feature = feature.permute(0, 2, 3, 4, 1)
+        feature = self.temporal_linear(feature) 
+        feature = feature.permute(0, 4, 1, 2, 3).squeeze(1)
+        assert feature.shape == (video.shape[0], 14, 14, 768)
+        feature = self.dim_linear(feature)
+        feature = feature.permute(0, 3, 1, 2)
+        feature = torch.nn.functional.interpolate(feature, size=(512, 512), mode='bilinear')
+        assert feature.shape == (video.shape[0], 64, 512, 512), feature.shape
+        return feature
+        
     def forward(self, X):
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
         current = frames[:, :3]
-        frames = torch.stack(torch.split(frames, 3, dim=1), dim=2)
-        # print(self.temporal_encoder(frames).mean(2).shape)
-        X = self.temporal_encoder(frames).mean(2)
+        frames = torch.stack(torch.split(frames, 3, dim=1), dim=2).permute(0, 2, 1, 3, 4)
+        print(frames[:,:8].shape)
+        X = self.encode_video(frames[:,:8])
         X = torch.nn.functional.interpolate(X, size=(512, 512))
         X = torch.cat([X, long, short, current], dim=1)
         X2 = self.backbone(X).logits
