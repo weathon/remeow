@@ -14,7 +14,9 @@ from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmenta
 import torch
 import numpy as np
 from PIL import Image
-from video_model import MyModel
+# from video_model import MyModel
+# from mae_encoder import MyModel 
+from matching_model import MyModel
 # from dual_stream import MyModel
 # from better_backbone import MyModel
 # from hand_attention import MyModel
@@ -23,11 +25,12 @@ from video_model import MyModel
 from trainer import trainer
 from is_net_backbone import ISNetBackbone
 
-from video_dataloader import CustomDataset
+# from video_dataloader import CustomDatase
+from dataloader import CustomDataset
 import wandb 
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 

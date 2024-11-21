@@ -9,14 +9,14 @@ from transformers import AutoImageProcessor, TimesformerForVideoClassification
 
 class MyModel(torch.nn.Module):
     def __init__(self, args):
-        config = SegformerConfig.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512")
+        config = SegformerConfig.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
         config.hidden_dropout_prob = args.hidden_dropout_prob
         config.attention_probs_dropout_prob = args.attention_probs_dropout_prob
         config.drop_path_rate = args.drop_path_rate
         config.classifier_dropout = args.classifier_dropout
-        backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(64 + 9, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-        backbone.decode_head.classifier = torch.nn.Conv2d(768, 512, kernel_size=(1, 1), stride=(1, 1))
+        backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512", config=config)
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(64 + 9, 32, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.decode_head.classifier = torch.nn.Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1))
         super().__init__()
         self.backbone = backbone
         self.upsampling = torch.nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False)
@@ -26,7 +26,7 @@ class MyModel(torch.nn.Module):
         self.dim_linear = torch.nn.Linear(768, 64)
         self.head = torch.nn.Sequential( 
             torch.nn.ReLU(),
-            torch.nn.Conv2d(512, 32, kernel_size=(5, 5), stride=(1, 1), padding="same"),
+            torch.nn.Conv2d(128, 32, kernel_size=(5, 5), stride=(1, 1), padding="same"),
             torch.nn.Dropout2d(0.1),
             torch.nn.ReLU(), 
             torch.nn.Conv2d(32, 1, kernel_size=(5, 5), stride=(1, 1), padding="same"),
@@ -36,7 +36,7 @@ class MyModel(torch.nn.Module):
     def encode_video(self, video):
         # video = self.processor(images=video, return_tensors="pt")
         video = torch.nn.functional.interpolate(video, size=(3, 224, 224)) 
-        outputs = model.temporal_encoder.timesformer(video).last_hidden_state
+        outputs = self.temporal_encoder.timesformer(video).last_hidden_state
         feature = outputs[:,1:].reshape(-1, 8, 14, 14, 768)
         feature = feature.permute(0, 2, 3, 4, 1)
         feature = self.temporal_linear(feature) 
@@ -52,7 +52,6 @@ class MyModel(torch.nn.Module):
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
         current = frames[:, :3]
         frames = torch.stack(torch.split(frames, 3, dim=1), dim=2).permute(0, 2, 1, 3, 4)
-        print(frames[:,:8].shape)
         X = self.encode_video(frames[:,:8])
         X = torch.nn.functional.interpolate(X, size=(512, 512))
         X = torch.cat([X, long, short, current], dim=1)
