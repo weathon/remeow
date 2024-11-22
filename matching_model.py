@@ -12,9 +12,8 @@ class MyModel(torch.nn.Module):
     def __init__(self, args):
         super().__init__()
         self.backbone = torch.hub.load('facebookresearch/dino:main', 'dino_vits8')
-        # self.backbone.decode_head.classifier = torch.nn.Identity()
         self.decoder = torch.nn.Sequential(
-            torch.nn.Conv2d(7, 32, kernel_size=(7, 7), stride=(1, 1), padding="same"),
+            torch.nn.Conv2d(8, 32, kernel_size=(7, 7), stride=(1, 1), padding="same"),
             torch.nn.ReLU(),
             torch.nn.Conv2d(32, 64, kernel_size=(7, 7), stride=(1, 1), padding="same"),
             torch.nn.ReLU(),
@@ -52,19 +51,9 @@ class MyModel(torch.nn.Module):
     def forward(self, X, return_flow=False):
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
         current = frames[:, :3]
-        second = frames[:, 3:6]
-        third = frames[:, 6:9]
-        # flow1 = self.matching(self.backbone.get_intermediate_layers(current)[0], 
-        #                      self.backbone.get_intermediate_layers(second)[0])
-        # flow2 = self.matching(self.backbone.get_intermediate_layers(second)[0], 
-        #                      self.backbone.get_intermediate_layers(third)[0])
-        flow3 = self.matching(self.backbone.get_intermediate_layers(current)[0],
-                                self.backbone.get_intermediate_layers(long)[0])
-        flow4 = self.matching(self.backbone.get_intermediate_layers(current)[0],
-                                self.backbone.get_intermediate_layers(short)[0])
-        flow = torch.cat([flow3, flow4], dim=1)
-        X = torch.cat([current, flow], dim=1)
-        assert X.shape == (X.shape[0], 7, 512, 512), f"X shape: {X.shape}"
+        flow = self.matching(self.backbone.get_intermediate_layers(current)[0], self.backbone.get_intermediate_layers(long)[0])
+        X = torch.cat([current, flow, short], dim=1)
+        assert X.shape == (X.shape[0], 8, 512, 512), f"X shape: {X.shape}"
         X = self.decoder(X)
         if return_flow:
             return X, flow
