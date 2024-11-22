@@ -66,7 +66,7 @@ class MyModel(nn.Module):
             # in_feature = self.backbone(in_img).logits
             # long_feature = self.backbone(long_img).logits
             # short_feature = self.backbone(short_img).logits 
-            X_features = self.backbone(X).logits
+            X_features = self.backbone(X).logits #nowonder it is slow
             in_feature, long_feature, short_feature = torch.split(X_features, len(X_features)//3, dim=0)
             
             pred = bca(in_feature, long_feature, short_feature)
