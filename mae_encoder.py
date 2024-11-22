@@ -9,15 +9,15 @@ from transformers import AutoImageProcessor, TimesformerForVideoClassification
 
 class MyModel(torch.nn.Module):
     def __init__(self, args):
-        config = SegformerConfig.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
+        config = SegformerConfig.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512")
+        super().__init__()
         config.hidden_dropout_prob = args.hidden_dropout_prob
         config.attention_probs_dropout_prob = args.attention_probs_dropout_prob
         config.drop_path_rate = args.drop_path_rate
         config.classifier_dropout = args.classifier_dropout
-        backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(64 + 9, 32, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-        backbone.decode_head.classifier = torch.nn.Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1))
-        super().__init__()
+        backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512", config=config)
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(64 + 9, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.decode_head.classifier = torch.nn.Conv2d(768, 128, kernel_size=(1, 1), stride=(1, 1))
         self.backbone = backbone
         self.upsampling = torch.nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False)
         self.processor = AutoImageProcessor.from_pretrained("facebook/timesformer-base-finetuned-k600")
@@ -32,7 +32,8 @@ class MyModel(torch.nn.Module):
             torch.nn.Conv2d(32, 1, kernel_size=(5, 5), stride=(1, 1), padding="same"),
             torch.nn.Sigmoid()
         )        
-        
+        for param in self.temporal_encoder.timesformer.embeddings.patch_embeddings.projection.parameters():
+            param.requires_grad = False
     def encode_video(self, video):
         # video = self.processor(images=video, return_tensors="pt")
         video = torch.nn.functional.interpolate(video, size=(3, 224, 224)) 

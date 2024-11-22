@@ -32,13 +32,16 @@ class MyModel(torch.nn.Module):
             return torch.Tensor, shape (batch_size, 2, 128, 128)
         """
 
-        feature1_ = feature1.flatten(2, 3).permute(0, 2, 1)
-        feature2_ = feature2.flatten(2, 3).permute(0, 2, 1)
-        assert feature1_.shape == feature2_.shape == (feature1.shape[0], 64*64, feature1.shape[1]), f"feature1 shape: {feature1_.shape}, feature2 shape: {feature2_.shape}"
+        feature1_ = feature1[:,1:]#.flatten(2, 3).permute(0, 2, 1)
+        feature2_ = feature2[:,1:]#.flatten(2, 3).permute(0, 2, 1)
+        assert feature1_.shape == feature2_.shape == (feature1.shape[0], 64*64, feature1.shape[-1]), f"feature1 shape: {feature1_.shape}, feature2 shape: {feature2_.shape}"
         
         corr = torch.bmm(feature1_, feature2_.transpose(1, 2)).softmax(dim=-1)
         grid = torch.stack(torch.meshgrid(torch.arange(64), torch.arange(64)), dim=-1).float().flatten(0, 1).to(corr.device)
-        correspondence = torch.einsum("bik,kj->bij", corr, grid)
+        # correspondence = torch.einsum("bll,ld->bld", corr, grid)
+        assert grid.shape == (64*64, 2), f"grid shape: {grid.shape}"
+        grid = grid[None, ...].repeat(corr.shape[0], 1, 1)
+        correspondence = torch.matmul(corr, grid) 
         flow = correspondence - grid
         flow = flow.reshape(feature1.shape[0], 64, 64, 2).permute(0, 3, 1, 2)
         return torch.nn.functional.interpolate(flow, size=(512, 512), mode='bilinear')
@@ -46,21 +49,30 @@ class MyModel(torch.nn.Module):
         
         
         
-    def forward(self, X):
-        current = X[:, :3]
-        long = X[:, -6:-3]
-        short = X[:, -3:]
-        current_feature = self.backbone.get_intermediate_layers(current)[0]
-        long_feature = self.backbone.get_intermediate_layers(long)[0]
-        short_feature = self.backbone.get_intermediate_layers(short)[0]
-        
-        flow1 = self.matching(current_feature, long_feature)
-        flow2 = self.matching(current_feature, short_feature)
-        image = torch.cat([flow1, flow2, current], dim=1)
-        return self.decoder(image)
-    
+    def forward(self, X, return_flow=False):
+        frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
+        current = frames[:, :3]
+        second = frames[:, 3:6]
+        third = frames[:, 6:9]
+        # flow1 = self.matching(self.backbone.get_intermediate_layers(current)[0], 
+        #                      self.backbone.get_intermediate_layers(second)[0])
+        # flow2 = self.matching(self.backbone.get_intermediate_layers(second)[0], 
+        #                      self.backbone.get_intermediate_layers(third)[0])
+        flow3 = self.matching(self.backbone.get_intermediate_layers(current)[0],
+                                self.backbone.get_intermediate_layers(long)[0])
+        flow4 = self.matching(self.backbone.get_intermediate_layers(current)[0],
+                                self.backbone.get_intermediate_layers(short)[0])
+        flow = torch.cat([flow3, flow4], dim=1)
+        X = torch.cat([current, flow], dim=1)
+        assert X.shape == (X.shape[0], 7, 512, 512), f"X shape: {X.shape}"
+        X = self.decoder(X)
+        if return_flow:
+            return X, flow
+        return X
 if __name__ == "__main__":
     # %%
+    from video_dataloader import CustomDataset
+    import cv2
     class Args:
         def __init__(self):
             self.attention_probs_dropout_prob = 0.05
@@ -72,8 +84,13 @@ if __name__ == "__main__":
 
     args = Args()
     model = MyModel(args)
-    X = torch.randn(4, 9, 512, 512)
-    print(model(X).shape)
+    X = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 3, "val")[0][0].unsqueeze(0)
+    pred = model(X, return_flow=True)
+    print(pred[1][0][0].shape)
+    cv2.imwrite('test.png', pred[1][0][1].detach().cpu().numpy()*255)
+    cv2.imwrite("source.png", X[0, :3].permute(1, 2, 0).detach().cpu().numpy()*255)
+    
+    
 
 
 

@@ -121,7 +121,7 @@ class CustomDataset(Dataset):
             if random.random() > 0.7:
                 long_image = self.bg_trans(long_image)
         in_images = []
-        for i in range(0,100,10):
+        for i in range(0,80,10):
             image_id = int(image_name.split("_")[-1].split(".")[0].replace("in","")) - i
             image_id = str(image_id).zfill(6)
             in_image_path = os.path.join(self.data_path, 'in', "_".join(image_name.split("_")[:-1] + [f"in{image_id}.jpg"]))
