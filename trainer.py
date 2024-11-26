@@ -6,11 +6,11 @@ def printred(text):
 
 def printgreen(text):
     print(f"\033[32m{text}\033[0m")
-    
+
 from sklearn.metrics import f1_score
 class trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
-        self.model = model.cuda()
+        self.model = model
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self.train_dataloader = train_dataloader
@@ -21,6 +21,7 @@ class trainer:
         self.running_f1 = []
         self.step = 0
         self.validate_f1 = False
+        self.scaler = torch.GradScaler()
 
     def getgrad(self):
         grads = [] #it was just [0] 
@@ -34,16 +35,26 @@ class trainer:
         self.model.train()
         self.optimizer.zero_grad()
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
-        pred = self.model(X).squeeze(1) 
-        loss = self.loss_fn(pred, Y, ROI)
-        # self.scaler.scale(loss).backward()
-        loss.backward() 
-        self.optimizer.step()
+        with torch.autocast(device_type='cuda', dtype=torch.float16):
+            for i in range(X.shape[0]//4):
+                start = i * 4
+                end = start + 4
+                pred = self.model(X[start:end]).squeeze(1) 
+                loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
+                self.scaler.scale(loss).backward()
+            
+
+
+        self.scaler.unscale_(self.optimizer)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+        
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
         e = 1e-6
         # pred = torch.sigmoid(pred)
-        pred_ = pred[ROI > 0.9] > 0.5
+        pred_ = pred[ROI[-4:] > 0.9] > 0.5
         pred_ = pred_.float()
-        Y = Y[ROI > 0.9] > 0.5
+        Y = Y[-4:][ROI[-4:] > 0.9] > 0.5
         Y = Y.float()
         f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
         

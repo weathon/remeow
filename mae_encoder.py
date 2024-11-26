@@ -16,14 +16,14 @@ class MyModel(torch.nn.Module):
         config.drop_path_rate = args.drop_path_rate
         config.classifier_dropout = args.classifier_dropout
         backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b4-finetuned-ade-512-512", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(64 + 9, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(8 + 9, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         backbone.decode_head.classifier = torch.nn.Conv2d(768, 128, kernel_size=(1, 1), stride=(1, 1))
         self.backbone = backbone
         self.upsampling = torch.nn.Upsample(scale_factor=4, mode='bilinear', align_corners=False)
         self.processor = AutoImageProcessor.from_pretrained("facebook/timesformer-base-finetuned-k600")
         self.temporal_encoder = TimesformerForVideoClassification.from_pretrained("facebook/timesformer-base-finetuned-k600")
         self.temporal_linear = torch.nn.Linear(8, 1)
-        self.dim_linear = torch.nn.Linear(768, 64)
+        self.dim_linear = torch.nn.Linear(768, 8)
         self.head = torch.nn.Sequential( 
             torch.nn.ReLU(),
             torch.nn.Conv2d(128, 32, kernel_size=(5, 5), stride=(1, 1), padding="same"),
@@ -46,7 +46,7 @@ class MyModel(torch.nn.Module):
         feature = self.dim_linear(feature)
         feature = feature.permute(0, 3, 1, 2)
         feature = torch.nn.functional.interpolate(feature, size=(512, 512), mode='bilinear')
-        assert feature.shape == (video.shape[0], 64, 512, 512), feature.shape
+        assert feature.shape == (video.shape[0], 8, 512, 512), feature.shape
         return feature
         
     def forward(self, X):
