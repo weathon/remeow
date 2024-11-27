@@ -39,6 +39,7 @@ class CustomDataset(Dataset):
             ])
         else:
             self.image_names = random.sample(image_names, 128)
+            # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
 

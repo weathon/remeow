@@ -21,7 +21,7 @@ class trainer:
         self.running_f1 = []
         self.step = 0
         self.validate_f1 = False
-        self.scaler = torch.GradScaler()
+        # self.scaler = torch.GradScaler()
 
     def getgrad(self):
         grads = [] #it was just [0] 
@@ -35,21 +35,22 @@ class trainer:
         self.model.train()
         self.optimizer.zero_grad()
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
-        with torch.autocast(device_type='cuda', dtype=torch.float16):
-            for i in range(X.shape[0]//4):
-                start = i * 4
-                end = start + 4
-                pred = self.model(X[start:end]).squeeze(1) 
-                loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
-                self.scaler.scale(loss).backward()
-            
-
-
-        self.scaler.unscale_(self.optimizer)
+        # with torch.autocast(device_type='cuda', dtype=torch.float16):
+        for i in range(X.shape[0]//4):
+            start = i * 4
+            end = start + 4 
+            pred = self.model(X[start:end]).squeeze(1) 
+            loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
+            # self.scaler.scale(loss).backward()
+            loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+        self.optimizer.step()
         
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
+        # self.scaler.unscale_(self.optimizer)
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+        
+        # self.scaler.step(self.optimizer)
+        # self.scaler.update()
         e = 1e-6
         # pred = torch.sigmoid(pred)
         pred_ = pred[ROI[-4:] > 0.9] > 0.5
