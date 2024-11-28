@@ -21,6 +21,8 @@ from PIL import Image
 # from better_backbone import MyModel
 # from better_backbone_with_3d_conv import MyModel
 from simple_3dconv import MyModel
+# from flow import MyModel
+# from matching_model import MyModel
 # from hand_attention import MyModel
 # from seg_unet import MyModel
 # from simple_conv import MyModel
@@ -36,7 +38,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
-optimizer = torch.optim.AdamW(model.parameters(), lr=9e-5, weight_decay=0.25e-2) 
+optimizer = torch.optim.AdamW(model.parameters(), lr=7e-5, weight_decay=0.25e-2) 
 
 # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps) 
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
@@ -65,7 +67,7 @@ wandb.init(project="Remeow")
 wandb.define_metric("pstep")
 logger = wandb
 # model = torch.nn.DataParallel(model).cuda()
-model = model.cudar()
+model = model.cuda()
 # model.load_state_dict(torch.load("model.pth"))
 trainer = trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn)
 

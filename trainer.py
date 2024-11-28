@@ -92,12 +92,12 @@ class trainer:
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
-            if train_i % 100 == 0:
+            if train_i % 500 == 0:
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
                     self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
-            if train_i % 100 == 0: 
+            # if train_i % 100 == 0: 
                 weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.008
                 for param_group in self.optimizer.param_groups:
                     param_group['weight_decay'] = weight_decay

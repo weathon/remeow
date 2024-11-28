@@ -4,6 +4,7 @@ from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmenta
 import torch
 import numpy as np
 from PIL import Image
+import torchvision
 
 
 # %% 
@@ -15,7 +16,7 @@ class MyModel(torch.nn.Module):
         self.decoder = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-ade-512-512")
         self.decoder.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(11, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         self.decoder.decode_head.classifier = torch.nn.Conv2d(768, 128, kernel_size=(1, 1), stride=(1, 1))
-
+        self.raft = torchvision.models.optical_flow.raft_large(pretrained=True)
         self.head = torch.nn.Sequential(
             torch.nn.Conv2d(128, 32, kernel_size=(3, 3), stride=(1, 1), padding="same"),
             torch.nn.ReLU(),
@@ -28,25 +29,6 @@ class MyModel(torch.nn.Module):
         )
         
 
-    def matching(self, feature1, feature2):
-        """
-            feature1: torch.Tensor, shape (batch_size, C, 128, 128)
-            feature2: torch.Tensor, shape (batch_size, C, 128, 128)
-            return torch.Tensor, shape (batch_size, 2, 128, 128)
-        """
-
-        feature1_ = feature1#.flatten(2, 3).permute(0, 2, 1)
-        feature2_ = feature2#.flatten(2, 3).permute(0, 2, 1)
-        assert feature1_.shape == feature2_.shape == (feature1.shape[0], 30*30, feature1.shape[-1]), f"feature1 shape: {feature1_.shape}, feature2 shape: {feature2_.shape}"
-        corr = torch.bmm(feature1_, feature2_.transpose(1, 2)).softmax(dim=-1)
-        grid = torch.stack(torch.meshgrid(torch.arange(30), torch.arange(30)), dim=-1).float().flatten(0, 1).to(corr.device)
-        assert grid.shape == (30*30, 2), f"grid shape: {grid.shape}"
-        grid = grid[None, ...].repeat(corr.shape[0], 1, 1)
-        correspondence = torch.matmul(corr, grid) 
-        flow = correspondence - grid
-        flow = flow.reshape(feature1.shape[0], 30, 30, 2).permute(0, 3, 1, 2)
-        return torch.nn.functional.interpolate(flow, size=(512, 512), mode='bilinear')
-        
         
         
         
@@ -54,10 +36,7 @@ class MyModel(torch.nn.Module):
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
         current = frames[:, :3]
         last = frames[:, 3:6]
-        current_ = torch.nn.functional.interpolate(current, size=(420, 420), mode='bilinear')
-        last_ = torch.nn.functional.interpolate(last, size=(420, 420), mode='bilinear')
-        flow = self.matching(self.backbone.get_intermediate_layers(current_)[0], 
-                              self.backbone.get_intermediate_layers(last_)[0])
+        flow = self.raft(current, last)[-1]
         X = torch.cat([current, flow, long, short], dim=1)
         assert X.shape == (X.shape[0], 11, 512, 512), f"X shape: {X.shape}"
         X = self.decoder(X)
