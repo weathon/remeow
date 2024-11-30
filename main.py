@@ -61,13 +61,13 @@ def iou_loss(pred, target, ROI):
     # pred = torch.sigmoid(pred)[ROI>0.9] hu xi 
     
     total_loss = 0
-    for i in range(1, 6):
+    for i in range(5):
         pred_ = pred[:,i][ROI>0.9]
         target_ = target.float()[ROI>0.9] 
         intersection = (pred_ * target_).sum()
         union = pred_.sum() + target_.sum() - intersection 
         iou = (intersection + 1e-6) / (union + 1e-6)
-        total_loss +=  (1 - iou) * (0.6 ** (5-i))
+        total_loss +=  (1 - iou) * (0.6 ** (5 - i - 1))
         
     return total_loss
 

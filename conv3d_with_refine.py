@@ -8,7 +8,7 @@ from mini_unet import MiniUNet
 conv3d = True
 backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-backbone.decode_head.classifier = torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+backbone.decode_head.classifier = torch.nn.Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1))
 
 
 
@@ -19,15 +19,13 @@ class MyModel(nn.Module):
         self.args = args
         self.backbone = backbone
         self.head = torch.nn.Sequential(
-            nn.ReLU(),
-            nn.Conv2d(512, 128, 3, padding="same"),
+            nn.Conv2d(64, 32, 3, padding="same"),
             nn.Dropout2d(0.15),
             nn.ReLU(),
-            nn.Conv2d(128, 64, 3, padding="same"),
+            nn.Conv2d(32, 16, 3, padding="same"),
             nn.Dropout2d(0.15),
             nn.ReLU(),
-            nn.Conv2d(64, 1, 3, padding="same"),
-            nn.Dropout2d(0.15),
+            nn.Conv2d(16, 1, 3, padding="same"),
         )
         self.conv3d = torch.nn.Sequential(
             nn.Conv3d(3, 8, (3, 3, 3), padding="same"),
@@ -67,7 +65,7 @@ class MyModel(nn.Module):
         #     torch.nn.Dropout2d(0.15),
         #     torch.nn.Conv2d(8, 1, 3),
         # ) 
-        self.refine_conv = MiniUNet(in_channels=33, out_channels=1)
+        self.refine_conv = MiniUNet(in_channels=64 + 32, out_channels=64)
         self.frame_encoder = torch.nn.Sequential(
             torch.nn.Conv2d(3, 8, 3, padding="same"),
             torch.nn.AvgPool2d(2), 
@@ -78,19 +76,21 @@ class MyModel(nn.Module):
         )
             
     def refine(self, mask, current, long):
-        """
+        """ 
         Input: mask, current
         Output: Refined Mask
         """
-        masks = []
+        masks = [self.head(mask)]
         current = self.frame_encoder(current)
         long = self.frame_encoder(long)
-        for i in range(5):
+        for i in range(4): 
             X = torch.cat([mask, current, long], dim=1)
+            noise = torch.randn_like(X) * torch.std(X) * 0.1
+            X += noise
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
             mask = mask + delta_mask
-            masks.append(mask)
+            masks.append(self.head(mask))
         
         return torch.cat(masks, dim=1)
     def forward(self, X): 
@@ -106,12 +106,14 @@ class MyModel(nn.Module):
         X = torch.cat([frames, short, long, current], dim=1)
         assert X.shape[1:] == (17 if conv3d else 12, 512, 512)
         X = self.backbone(X).logits 
-        assert X.shape[1:] == (512, 128, 128)
+        assert X.shape[1:] == (64, 128, 128), X.shape
 
-        pred = X
-        mask = self.head(pred)
-        masks = self.refine(mask, current, long)
-        masks = self.upsample(masks)        
+
+
+        masks = self.refine(X, current, long)
+        print(masks.shape)
+        
+        masks = self.upsample(masks) 
         masks = torch.sigmoid(masks)
         return masks
 
