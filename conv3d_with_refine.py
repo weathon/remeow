@@ -74,7 +74,7 @@ class MyModel(nn.Module):
             torch.nn.AvgPool2d(2),
             torch.nn.ReLU(),
         )
-            
+        
     def refine(self, mask, current, long):
         """ 
         Input: mask, current
@@ -85,8 +85,8 @@ class MyModel(nn.Module):
         long = self.frame_encoder(long)
         for i in range(4): 
             X = torch.cat([mask, current, long], dim=1)
-            noise = torch.randn_like(X) * torch.std(X) * 0.1
-            X += noise
+            noise = torch.randn_like(X) * torch.std(X) * 0.05
+            X += noise.detach() #need detach otherwise backprop will crash 
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
             mask = mask + delta_mask
@@ -111,7 +111,7 @@ class MyModel(nn.Module):
 
 
         masks = self.refine(X, current, long)
-        print(masks.shape)
+        # print(masks.shape)
         
         masks = self.upsample(masks) 
         masks = torch.sigmoid(masks)
