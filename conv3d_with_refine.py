@@ -5,8 +5,8 @@ from transformers import SegformerForSemanticSegmentation
 
 from convGRU import ConvGRU
 conv3d = True
-backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b0-finetuned-ade-512-512")
-backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 32, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
+backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
 backbone.decode_head.classifier = torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
 class MyModel(nn.Module):
     def __init__(self, args):
@@ -38,7 +38,7 @@ class MyModel(nn.Module):
 
         self.t_dim = nn.Linear(8, 1)
         self.upsample = torch.nn.Upsample(scale_factor=4, mode="bicubic")
-        # self.refine_gru = ConvGRU(input_size=(640, 640),
+        # self.refine_gru = ConvGRU(input_size=(512, 512),
         #         input_dim=7,
         #         hidden_dim=32,
         #         kernel_size=(3, 3),
@@ -51,22 +51,25 @@ class MyModel(nn.Module):
 
         # add noise before refine? 
         self.refine_conv = torch.nn.Sequential(
-            torch.nn.Conv2d(33, 8, 5),
+            torch.nn.Conv2d(33, 64, 3),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(8, 16, 5),
+            torch.nn.Dropout2d(0.15), 
+            torch.nn.Conv2d(64, 32, 3),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(16, 8, 5),
+            torch.nn.Dropout2d(0.15),
+            torch.nn.Conv2d(32, 8, 3),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(8, 1, 5),
-        )
+            torch.nn.Dropout2d(0.15),
+            torch.nn.Conv2d(8, 1, 3),
+        ) 
         
         self.frame_encoder = torch.nn.Sequential(
             torch.nn.Conv2d(3, 8, 3, padding="same"),
-            torch.nn.AvgPool2d(2),
+            torch.nn.AvgPool2d(2), 
             torch.nn.ReLU(),
             torch.nn.Conv2d(8, 16, 3, padding="same"),
             torch.nn.AvgPool2d(2),
-            torch.nn.ReLU(), #I got it it cannot be relu here because it is followed by a sigmoid, it used to be leaky relu and it is all gray now it is relu and it is okay?
+            torch.nn.ReLU(),
         )
             
     def refine(self, mask, current, long):
@@ -80,7 +83,7 @@ class MyModel(nn.Module):
         for i in range(5):
             X = torch.cat([mask, current, long], dim=1)
             delta_mask = self.refine_conv(X) 
-            delta_mask = torch.nn.functional.interpolate(delta_mask, size=(160, 160), mode="nearest")
+            delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
             mask = mask + delta_mask
             masks.append(mask)
         
@@ -90,15 +93,15 @@ class MyModel(nn.Module):
         current = frames[:, :3]
         frames = torch.stack(torch.split(frames, 3, dim=1), dim=2)
         frames = self.conv3d(frames)
-        assert frames.shape[1:] == (8 if conv3d else 3, 8, 640, 640), frames.shape
+        assert frames.shape[1:] == (8 if conv3d else 3, 8, 512, 512), frames.shape
         frames = frames.permute(0, 1, 3, 4, 2)
-        assert frames.shape[1:] == (8 if conv3d else 3, 640, 640, 8)
+        assert frames.shape[1:] == (8 if conv3d else 3, 512, 512, 8)
         frames = self.t_dim(frames).squeeze(-1)
-        assert frames.shape[1:] == (8 if conv3d else 3, 640, 640)
+        assert frames.shape[1:] == (8 if conv3d else 3, 512, 512)
         X = torch.cat([frames, short, long, current], dim=1)
-        assert X.shape[1:] == (17 if conv3d else 12, 640, 640)
+        assert X.shape[1:] == (17 if conv3d else 12, 512, 512)
         X = self.backbone(X).logits 
-        assert X.shape[1:] == (512, 160, 160)
+        assert X.shape[1:] == (512, 128, 128)
 
         pred = X
         mask = self.head(pred)

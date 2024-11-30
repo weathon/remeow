@@ -7,8 +7,8 @@ import numpy as np
 import random
 import torchvision
 from transformers import AutoImageProcessor
-image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b5-finetuned-ade-640-640")
-IMG_SIZE = 640
+IMG_SIZE = 512
+image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 class CustomDataset(Dataset):
     def __init__(self, train_path, val_path, fold, mode='train'):
         self.data_path = train_path if mode == 'train' else val_path
