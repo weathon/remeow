@@ -122,14 +122,14 @@ class trainer:
                                 "val_gt": self.logger.Image(val_Y[0].unsqueeze(0)),
                                 "val_in": self.logger.Image(val_X[0][:3]),
                                 "val_roi": self.logger.Image((val_ROI[0].unsqueeze(0) * 255).to(torch.uint8)),
-                                "val_BG1": self.logger.Image(val_X[0][3:6]),
-                                "val_BG2": self.logger.Image(val_X[0][6:9]),
+                                "val_BG1": self.logger.Image(val_X[0][-6:-3]),
+                                "val_BG2": self.logger.Image(val_X[0][-3:]),
                                 "train_pred": self.logger.Image(train_pred[0].unsqueeze(0)),
                                 "train_gt": self.logger.Image(Y[0].unsqueeze(0)),
                                 "train_in": self.logger.Image(X[0][:3]),
                                 "train_roi": self.logger.Image((ROI[0].unsqueeze(0) * 255).to(torch.uint8)),
-                                "train_BG1": self.logger.Image(X[0][3:6]),
-                                "train_BG2": self.logger.Image(X[0][6:9])
+                                "train_BG1": self.logger.Image(X[0][-6:-3]),
+                                "train_BG2": self.logger.Image(X[0][-3:])
                 })
                 
                 self.logger.log({"pstep":self.step, "val_loss": val_runnning_loss / len(self.val_dataloader), "val_f1": val_running_f1 / len(self.val_dataloader)})
