@@ -4,10 +4,15 @@ import torch
 from transformers import SegformerForSemanticSegmentation
 
 from convGRU import ConvGRU
+from mini_unet import MiniUNet
 conv3d = True
 backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
 backbone.decode_head.classifier = torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+
+
+
+
 class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
@@ -50,19 +55,19 @@ class MyModel(nn.Module):
         # self.out_linear = torch.nn.Conv3d(64, 1, (1, 1, 1))
 
         # add noise before refine? 
-        self.refine_conv = torch.nn.Sequential(
-            torch.nn.Conv2d(33, 64, 3),
-            torch.nn.ReLU(),
-            torch.nn.Dropout2d(0.15), 
-            torch.nn.Conv2d(64, 32, 3),
-            torch.nn.ReLU(),
-            torch.nn.Dropout2d(0.15),
-            torch.nn.Conv2d(32, 8, 3),
-            torch.nn.ReLU(),
-            torch.nn.Dropout2d(0.15),
-            torch.nn.Conv2d(8, 1, 3),
-        ) 
-        
+        # self.refine_conv = torch.nn.Sequential(
+        #     torch.nn.Conv2d(33, 64, 3),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Dropout2d(0.15), 
+        #     torch.nn.Conv2d(64, 32, 3),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Dropout2d(0.15),
+        #     torch.nn.Conv2d(32, 8, 3),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Dropout2d(0.15),
+        #     torch.nn.Conv2d(8, 1, 3),
+        # ) 
+        self.refine_conv = MiniUNet(in_channels=33, out_channels=1)
         self.frame_encoder = torch.nn.Sequential(
             torch.nn.Conv2d(3, 8, 3, padding="same"),
             torch.nn.AvgPool2d(2), 
