@@ -84,13 +84,13 @@ class MyModel(nn.Module):
         current = self.frame_encoder(current)
         long = self.frame_encoder(long)
         for i in range(4): 
+            noise = torch.randn_like(mask) * torch.std(mask) * 0.1 
+            mask = noise.detach() + mask # += not working but = + is okay 
             X = torch.cat([mask, current, long], dim=1)
-            noise = torch.randn_like(X) * torch.std(X) * 0.05 
-            X += noise.detach() #need detach otherwise backprop will crash 
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
             mask = mask + delta_mask
-            masks.append(self.head(mask))
+            masks.append(self.head(mask)) 
         
         return torch.cat(masks, dim=1)
     def forward(self, X): 
@@ -125,5 +125,5 @@ if __name__ == "__main__":
     pred = model(X[None])
     print(pred.shape)
     print(pred.min(), pred.max())
-    
+    pred.mean().backward()
         
