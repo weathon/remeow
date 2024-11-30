@@ -49,8 +49,8 @@ lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max',
 train_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 2, "train")
 val_dataset = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 2, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 
 def iou_loss(pred, target, ROI): 
     pshape = pred.shape[:1] + pred.shape[2:]

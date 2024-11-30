@@ -6,7 +6,7 @@ def printred(text):
 
 def printgreen(text):
     print(f"\033[32m{text}\033[0m")
-
+batch_size = 8
 
 REFINE = True
 from sklearn.metrics import f1_score
@@ -38,9 +38,9 @@ class trainer:
         self.optimizer.zero_grad()
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
-        for i in range(X.shape[0]//4):
-            start = i * 4
-            end = start + 4 
+        for i in range(X.shape[0]//batch_size):
+            start = i * batch_size
+            end = start + batch_size
             pred = self.model(X[start:end])
             loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
             # self.scaler.scale(loss).backward()
@@ -55,9 +55,9 @@ class trainer:
         # self.scaler.update()
         e = 1e-6
         # pred = torch.sigmoid(pred)
-        pred_ = pred[:,-1][ROI[-4:] > 0.9] > 0.5
+        pred_ = pred[:,-1][ROI[-batch_size:] > 0.9] > 0.5
         pred_ = pred_.float()
-        Y = Y[-4:][ROI[-4:] > 0.9] > 0.5
+        Y = Y[-batch_size:][ROI[-batch_size:] > 0.9] > 0.5
         Y = Y.float()
         f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
         
@@ -95,7 +95,7 @@ class trainer:
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             # print(ROI[0].max())
-            if train_i % 500 == 0:
+            if train_i % 100 == 0:
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
@@ -114,6 +114,7 @@ class trainer:
                     val_runnning_loss += val_loss
                     val_running_f1 += val_f1
                 # print(ROI[0].max(), val_ROI[0].max())
+                print(f"Train pred Range: {train_pred.min()}, {train_pred.max()}")
                 self.logger.log({
                                 "pstep":self.step,
                                 "weight_decay":self.optimizer.param_groups[0]["weight_decay"],
