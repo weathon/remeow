@@ -5,9 +5,9 @@ from transformers import SegformerForSemanticSegmentation
 
 from convGRU import ConvGRU
 conv3d = True
-backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b3-finetuned-ade-512-512")
+backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-backbone.decode_head.classifier = torch.nn.Conv2d(768, 512, kernel_size=(1, 1), stride=(1, 1))
+backbone.decode_head.classifier = torch.nn.Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
 class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
@@ -38,25 +38,25 @@ class MyModel(nn.Module):
 
         self.t_dim = nn.Linear(8, 1)
         self.upsample = torch.nn.Upsample(scale_factor=4, mode="bicubic")
-        # self.refine_gru = ConvGRU(input_size=(640, 640),
-        #         input_dim=7,
-        #         hidden_dim=64,
-        #         kernel_size=(3, 3),
-        #         num_layers=4,
-        #         dtype=torch.FloatTensor,
-        #         batch_first=True,
-        #         bias = True,
-        #         return_all_layers = False)
-        
-        self.refine_conv = torch.nn.Sequential(
-            torch.nn.Conv2d(7, 8, 5),
-            torch.nn.LeakyReLU(),
-            torch.nn.Conv2d(8, 16, 5),
-            torch.nn.LeakyReLU(),
-            torch.nn.Conv2d(16, 8, 5),
-            torch.nn.LeakyReLU(),
-            torch.nn.Conv2d(8, 1, 5),
-        )
+        self.refine_gru = ConvGRU(input_size=(640, 640),
+                input_dim=7,
+                hidden_dim=64,
+                kernel_size=(3, 3),
+                num_layers=5,
+                dtype=torch.FloatTensor,
+                batch_first=True,
+                bias = True, 
+                return_all_layers = False)
+        self.out_linear = torch.nn.Conv3d(64, 1, (1, 1, 1))
+        # self.refine_conv = torch.nn.Sequential(
+        #     torch.nn.Conv2d(7, 8, 5),
+        #     torch.nn.LeakyReLU(),
+        #     torch.nn.Conv2d(8, 16, 5),
+        #     torch.nn.LeakyReLU(),
+        #     torch.nn.Conv2d(16, 8, 5),
+        #     torch.nn.LeakyReLU(),
+        #     torch.nn.Conv2d(8, 1, 5),
+        # )
         
     def refine(self, mask, current, long):
         """
@@ -65,10 +65,17 @@ class MyModel(nn.Module):
         """
         
         X = torch.cat([mask, current, long], dim=1)
-        delta_X = self.refine_conv(X)
-        delta_X = torch.nn.functional.interpolate(delta_X, size=mask.shape[2:4], mode="bicubic")
-        return mask + delta_X
-        
+        X = X.unsqueeze(1).repeat(1, 5, 1, 1, 1)
+        delta_X = self.refine_gru(X)
+        states = delta_X[0][0]
+        states = states.permute(0, 2, 1, 3, 4)
+        delta_masks = self.out_linear(states).squeeze(1)
+        # print(mask.shape)
+        mask = mask.repeat(1, 5, 1, 1)
+        assert delta_masks.shape == mask.shape
+        masks = delta_masks + mask
+      
+        return masks
     def forward(self, X): 
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
         current = frames[:, :3]
@@ -89,9 +96,8 @@ class MyModel(nn.Module):
         mask = self.head(pred)
         
         masks = []
-        for i in range(5):
-            mask = self.refine(mask, current, long)
-            masks.append(torch.sigmoid(mask))
+        mask = self.refine(mask, current, long)
+        masks.append(torch.sigmoid(mask))
         
         return torch.cat(masks, dim=1)
 

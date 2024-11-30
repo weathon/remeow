@@ -20,7 +20,8 @@ from PIL import Image
 # from dual_stream import MyModel
 # from better_backbone import MyModel
 # from better_backbone_with_3d_conv import MyModel
-from simple_3dconv import MyModel
+# from simple_3dconv import MyModel
+from conv3d_with_refine import MyModel
 # from cross_attn import MyModel
 # from flow import MyModel
 # from matching_model import MyModel
@@ -52,15 +53,23 @@ train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuf
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=70, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 
 def iou_loss(pred, target, ROI): 
-    assert pred.shape == target.shape == ROI.shape, f"pred shape: {pred.shape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
+    pshape = pred.shape[:1] + pred.shape[2:]
+    assert pred.shape[1] == 5, f"pred shape: {pred.shape}"
+
+    assert pshape == target.shape == ROI.shape, f"pred shape: {pshape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
     # print(torch.sigmoid(pred).max(), ROI.max(), target.max())
     # pred = torch.sigmoid(pred)[ROI>0.9] hu xi 
-    pred = pred[ROI>0.9]
-    target = target.float()[ROI>0.9]
-    intersection = (pred * target).sum()
-    union = pred.sum() + target.sum() - intersection 
-    iou = (intersection + 1e-6) / (union + 1e-6)
-    return 1 - iou
+    
+    total_loss = 0
+    for i in range(5):
+        pred_ = pred[:,i][ROI>0.9]
+        target_ = target.float()[ROI>0.9]
+        intersection = (pred_ * target_).sum()
+        union = pred_.sum() + target_.sum() - intersection 
+        iou = (intersection + 1e-6) / (union + 1e-6)
+        total_loss +=  (1 - iou) * (0.8 ** (5-i))
+        
+    return total_loss
 
 
 def matching_loss(pred, target, ROI):

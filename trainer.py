@@ -7,6 +7,8 @@ def printred(text):
 def printgreen(text):
     print(f"\033[32m{text}\033[0m")
 
+
+REFINE = True
 from sklearn.metrics import f1_score
 class trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
@@ -29,7 +31,7 @@ class trainer:
             if param.grad is not None: #why need this
                 grads.append(param.grad.view(-1).cpu())
         grads = torch.cat(grads) 
-        return grads
+        return grads 
     
     def train_step(self, X, Y, ROI):       
         self.model.train()
@@ -39,7 +41,7 @@ class trainer:
         for i in range(X.shape[0]//4):
             start = i * 4
             end = start + 4 
-            pred = self.model(X[start:end]).squeeze(1) 
+            pred = self.model(X[start:end])
             loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
             # self.scaler.scale(loss).backward()
             loss.backward()
@@ -53,7 +55,7 @@ class trainer:
         # self.scaler.update()
         e = 1e-6
         # pred = torch.sigmoid(pred)
-        pred_ = pred[ROI[-4:] > 0.9] > 0.5
+        pred_ = pred[:,-1][ROI[-4:] > 0.9] > 0.5
         pred_ = pred_.float()
         Y = Y[-4:][ROI[-4:] > 0.9] > 0.5
         Y = Y.float()
@@ -61,15 +63,16 @@ class trainer:
         
         self.running_loss += [loss.item()]
         self.running_f1 += [f1.item()]
-        return pred.float()
+        return pred[:,-1].float()
 
     def validate(self, X, Y, ROI): 
         self.model.eval()
         with torch.no_grad():
-            pred = self.model(X).squeeze(1)
+            pred = self.model(X)
             loss = self.loss_fn(pred, Y, ROI)
             e = 1e-6
             # pred = torch.sigmoid(pred)
+            pred = pred[:,-1]
             pred_ = pred[ROI > 0.9] > 0.5
             pred = torch.where(ROI > 0.9, pred, 0) 
             pred_ = pred_.float()
