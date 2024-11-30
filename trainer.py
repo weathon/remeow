@@ -72,9 +72,11 @@ class trainer:
             loss = self.loss_fn(pred, Y, ROI)
             e = 1e-6
             # pred = torch.sigmoid(pred)
+            rough_pred = pred[:,0]
             pred = pred[:,-1]
             pred_ = pred[ROI > 0.9] > 0.5
             pred = torch.where(ROI > 0.9, pred, 0) 
+            rough_pred = torch.where(ROI > 0.9, rough_pred, 0)
             pred_ = pred_.float()
             Y = Y[ROI > 0.9] > 0.5
             Y = Y.float()
@@ -85,7 +87,7 @@ class trainer:
             #         print(f"\033[93m Mismatch {f1.item()}, {sklearn_f1}\033[0m")
             # self.validate_f1 = True
 
-        return loss, f1, pred.float()
+        return loss, f1, pred.float(), rough_pred
     
     
     def train_epoch(self):
@@ -101,7 +103,7 @@ class trainer:
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
                     self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
             # if train_i % 100 == 0: 
-                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.008
+                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.02
                 for param_group in self.optimizer.param_groups:
                     param_group['weight_decay'] = weight_decay
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
@@ -109,7 +111,7 @@ class trainer:
                 val_runnning_loss, val_running_f1 = 0, 0
                 for val_i, (val_X, val_Y, val_ROI) in enumerate(self.val_dataloader):
                     # print(val_ROI[0].max())
-                    val_loss, val_f1, val_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
+                    val_loss, val_f1, val_pred, rough_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
                     # print(val_f1
                     val_runnning_loss += val_loss
                     val_running_f1 += val_f1
@@ -129,7 +131,8 @@ class trainer:
                                 "train_in": self.logger.Image(X[0][:3]),
                                 "train_roi": self.logger.Image((ROI[0].unsqueeze(0) * 255).to(torch.uint8)),
                                 "train_BG1": self.logger.Image(X[0][-6:-3]),
-                                "train_BG2": self.logger.Image(X[0][-3:])
+                                "train_BG2": self.logger.Image(X[0][-3:]),
+                                "rough_pred": self.logger.Image(rough_pred[0].unsqueeze(0)),
                 })
                 
                 self.logger.log({"pstep":self.step, "val_loss": val_runnning_loss / len(self.val_dataloader), "val_f1": val_running_f1 / len(self.val_dataloader)})
