@@ -84,7 +84,7 @@ class MyModel(nn.Module):
         current = self.frame_encoder(current)
         long = self.frame_encoder(long)
         for i in range(4): 
-            noise = torch.randn_like(mask) * torch.std(mask) * 0.1 
+            noise = torch.randn_like(mask) * torch.std(mask) * 1
             mask = noise.detach() + mask # += not working but = + is okay 
             X = torch.cat([mask, current, long], dim=1)
             delta_mask = self.refine_conv(X) 
