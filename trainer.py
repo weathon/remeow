@@ -41,7 +41,7 @@ class trainer:
         for i in range(X.shape[0]//batch_size):
             start = i * batch_size
             end = start + batch_size
-            pred = self.model(X[start:end])
+            pred = self.model(X[start:end]) 
             loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
             # self.scaler.scale(loss).backward()
             loss.backward()
@@ -109,7 +109,7 @@ class trainer:
                 self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 printred(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
-                for val_i, (val_X, val_Y, val_ROI) in tqdm.tqdm(enumerate(self.val_dataloader)):
+                for val_i, (val_X, val_Y, val_ROI) in enumerate(tqdm.tqdm(self.val_dataloader, ncols=60)):
                     # print(val_ROI[0].max())
                     val_loss, val_f1, val_pred, rough_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
                     # print(val_f1
@@ -127,11 +127,11 @@ class trainer:
                                 "val_BG1": self.logger.Image(val_X[0][-6:-3]),
                                 "val_BG2": self.logger.Image(val_X[0][-3:]),
                                 "train_pred": self.logger.Image(train_pred[0].unsqueeze(0)),
-                                "train_gt": self.logger.Image(Y[0].unsqueeze(0)),
-                                "train_in": self.logger.Image(X[0][:3]),
-                                "train_roi": self.logger.Image((ROI[0].unsqueeze(0) * 255).to(torch.uint8)),
-                                "train_BG1": self.logger.Image(X[0][-6:-3]),
-                                "train_BG2": self.logger.Image(X[0][-3:]),
+                                "train_gt": self.logger.Image(Y[-batch_size].unsqueeze(0)),
+                                "train_in": self.logger.Image(X[-batch_size][:3]),
+                                "train_roi": self.logger.Image((ROI[-batch_size].unsqueeze(0) * 255).to(torch.uint8)),
+                                "train_BG1": self.logger.Image(X[-batch_size][-6:-3]),
+                                "train_BG2": self.logger.Image(X[-batch_size][-3:]),
                                 "rough_pred": self.logger.Image(rough_pred[0].unsqueeze(0)),
                 })
                 
