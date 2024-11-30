@@ -85,7 +85,7 @@ class MyModel(nn.Module):
         long = self.frame_encoder(long)
         for i in range(4): 
             X = torch.cat([mask, current, long], dim=1)
-            noise = torch.randn_like(X) * torch.std(X) * 0.05
+            noise = torch.randn_like(X) * torch.std(X) * 0.05 
             X += noise.detach() #need detach otherwise backprop will crash 
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
