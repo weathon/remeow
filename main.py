@@ -21,6 +21,7 @@ from PIL import Image
 # from better_backbone import MyModel
 # from better_backbone_with_3d_conv import MyModel
 from simple_3dconv import MyModel
+# from cross_attn import MyModel
 # from flow import MyModel
 # from matching_model import MyModel
 # from hand_attention import MyModel
@@ -61,6 +62,21 @@ def iou_loss(pred, target, ROI):
     iou = (intersection + 1e-6) / (union + 1e-6)
     return 1 - iou
 
+
+def matching_loss(pred, target, ROI):
+    assert pred.shape == target.shape == ROI.shape, f"pred shape: {pred.shape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
+    assert len(pred.shape) == 4
+    assert pred.shape[1:] == (640, 640, 256)
+    
+    pred = pred[ROI>0.9]
+    target = target[ROI>0.9]
+    assert pred.shape[2:]==(256,)
+    matching_volume = torch.einsum("ble,ble->bll", pred, pred)
+    axis1 = pred.reshape(pred.shape[0], -1)
+    
+    matching_volume = torch.sigmoid(matching_volume) 
+    
+    
 loss_fn = iou_loss
 
 wandb.init(project="Remeow")

@@ -2,9 +2,9 @@ from transformers import BeitForSemanticSegmentation
 import torch.nn as nn
 import torch
 from transformers import SegformerForSemanticSegmentation
-conv3d = False
+conv3d = True
 backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b5-finetuned-ade-640-640")
-backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
 backbone.decode_head.classifier = torch.nn.Conv2d(768, 512, kernel_size=(1, 1), stride=(1, 1))
 class MyModel(nn.Module):
     def __init__(self, args):
@@ -43,13 +43,13 @@ class MyModel(nn.Module):
         current = frames[:, :3]
         frames = torch.stack(torch.split(frames, 3, dim=1), dim=2)
         frames = self.conv3d(frames)
-        assert frames.shape[1:] == (3, 8, 640, 640), frames.shape
+        assert frames.shape[1:] == (8 if conv3d else 3, 8, 640, 640), frames.shape
         frames = frames.permute(0, 1, 3, 4, 2)
-        assert frames.shape[1:] == (3, 640, 640, 8)
+        assert frames.shape[1:] == (8 if conv3d else 3, 640, 640, 8)
         frames = self.t_dim(frames).squeeze(-1)
-        assert frames.shape[1:] == (3, 640, 640)
+        assert frames.shape[1:] == (8 if conv3d else 3, 640, 640)
         X = torch.cat([frames, short, long, current], dim=1)
-        assert X.shape[1:] == (12, 640, 640)
+        assert X.shape[1:] == (17 if conv3d else 12, 640, 640)
         X = self.backbone(X).logits 
         assert X.shape[1:] == (512, 160, 160)
         X = self.upsample(X)

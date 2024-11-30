@@ -23,7 +23,6 @@ class MyModel(nn.Module):
             nn.ReLU(),
             nn.Conv2d(64, 1, 3, padding="same"),
             nn.Dropout2d(0.15),
-            nn.Sigmoid() 
         )
         self.conv3d = torch.nn.Sequential(
             nn.Conv3d(3, 8, (3, 3, 3), padding="same"),
@@ -57,9 +56,7 @@ class MyModel(nn.Module):
             torch.nn.Conv2d(16, 8, 5),
             torch.nn.LeakyReLU(),
             torch.nn.Conv2d(8, 1, 5),
-            torch.nn.Tanh() # need to be tanh because it is delta, could be -1 ~ 1
         )
-        self.out_linear = torch.nn.Conv2d(1, 1, 1)
         
     def refine(self, mask, current, long):
         """
@@ -70,7 +67,7 @@ class MyModel(nn.Module):
         X = torch.cat([mask, current, long], dim=1)
         delta_X = self.refine_conv(X)
         delta_X = torch.nn.functional.interpolate(delta_X, size=mask.shape[2:4], mode="bicubic")
-        return mask + delta_X 
+        return mask + delta_X
         
     def forward(self, X): 
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]
@@ -91,11 +88,12 @@ class MyModel(nn.Module):
         pred = X
         mask = self.head(pred)
         
-        # for i in range(3):
-        #     mask = self.refine(mask, current, long)
+        masks = []
+        for i in range(5):
+            mask = self.refine(mask, current, long)
+            masks.append(torch.sigmoid(mask))
         
-        mask = self.refine(mask, current, long)
-        return torch.sigmoid(self.out_linear(mask))
+        return torch.cat(masks, dim=1)
 
 if __name__ == "__main__":
     model = MyModel(None)
