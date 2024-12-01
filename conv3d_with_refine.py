@@ -74,13 +74,13 @@ class MyModel(nn.Module):
             torch.nn.AvgPool2d(2),
             torch.nn.ReLU(),
         )
-        
+
     def refine(self, mask, current, long):
         """ 
         Input: mask, current
         Output: Refined Mask
         """
-        masks = [self.head(mask)]
+        masks = [self.head(self.upsample(mask))]
         current = self.frame_encoder(current)
         long = self.frame_encoder(long)
         for i in range(4): 
@@ -90,7 +90,7 @@ class MyModel(nn.Module):
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
             mask = mask + delta_mask
-            masks.append(self.head(mask)) 
+            masks.append(self.head(self.upsample(mask))) 
         
         return torch.cat(masks, dim=1)
     def forward(self, X): 
@@ -113,7 +113,7 @@ class MyModel(nn.Module):
         masks = self.refine(X, current, long)
         # print(masks.shape)
         
-        masks = self.upsample(masks) 
+        # masks = self.upsample(masks) 
         masks = torch.sigmoid(masks)
         return masks
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     model = MyModel(None)
     from video_dataloader import CustomDataset
     import torch
-    X, Y, ROI = CustomDataset("/mnt/fastdata/CDNet", "/mnt/fastdata/CDNet", 3, "train")[0]
+    X, Y, ROI = CustomDataset("/home/wg25r/CDNet", "/home/wg25r/CDNet", 3, "train")[0]
     pred = model(X[None])
     print(pred.shape)
     print(pred.min(), pred.max())
