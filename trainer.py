@@ -96,6 +96,10 @@ class trainer:
         # self.scaler = torch.GradScaler()
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
+            self.lr_scheduler.step()
+            self.scheduler_steps += 1
+            if self.scheduler_steps == 25000:
+                5/0
             # print(ROI[0].max())
             if train_i % 500 == 0:
                 if train_i != 0:
@@ -140,13 +144,14 @@ class trainer:
 
                 self.running_loss = []
                 self.running_f1 = []
-                self.lr_scheduler.step(val_running_f1 / len(self.val_dataloader))
+                # self.lr_scheduler.step(val_running_f1 / len(self.val_dataloader))
                 self.step += 1
                 if self.step >= 1000:
                     raise StopIteration
                 torch.save(self.model.state_dict(), f"model.pth")
 
     def train(self):
+        self.scheduler_steps = 0
         while True:
             try:
                 self.train_epoch()
