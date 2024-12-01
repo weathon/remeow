@@ -40,7 +40,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
-optimizer = torch.optim.AdamW(model.parameters(), lr=7e-5, weight_decay=0.25e-2) 
+optimizer = torch.optim.AdamW(model.parameters(), lr=7e-5, weight_decay=0.4e-2) 
 
 # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.ksteps) 
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
