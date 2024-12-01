@@ -89,7 +89,8 @@ class MyModel(nn.Module):
             X = torch.cat([mask, current, long], dim=1)
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
-            mask = mask + delta_mask
+            # mask = mask + delta_mask #maybe we could not do delta_mask otherwise the model will always do 0 for delta
+            mask = delta_mask
             masks.append(self.head(self.upsample(mask))) 
         
         return torch.cat(masks, dim=1)
