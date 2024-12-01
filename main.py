@@ -36,7 +36,7 @@ from video_dataloader import CustomDataset
 import wandb 
 
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
@@ -46,8 +46,8 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-2)
 lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
 # train_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "train")
 # val_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "val")
-train_dataset = CustomDataset("/home/wg25r/CDNet", "/home/wg25r/CDNet", 2, "train")
-val_dataset = CustomDataset("/home/wg25r/CDNet", "/home/wg25r/CDNet", 2, "val")
+train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", 4, "train")
+val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", 4, "val")
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
