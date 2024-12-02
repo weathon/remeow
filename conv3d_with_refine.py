@@ -6,9 +6,9 @@ from transformers import SegformerForSemanticSegmentation
 from convGRU import ConvGRU
 from mini_unet import MiniUNet
 conv3d = True
-backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
+backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b2-finetuned-ade-512-512")
 backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-backbone.decode_head.classifier = torch.nn.Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1))
+backbone.decode_head.classifier = torch.nn.Conv2d(768, 64, kernel_size=(1, 1), stride=(1, 1))
 
 
 
