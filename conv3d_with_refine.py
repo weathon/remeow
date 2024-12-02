@@ -6,18 +6,21 @@ from transformers import SegformerForSemanticSegmentation
 from convGRU import ConvGRU
 from mini_unet import MiniUNet
 conv3d = True
-backbone = SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b2-finetuned-ade-512-512")
-backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, 64, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-backbone.decode_head.classifier = torch.nn.Conv2d(768, 64, kernel_size=(1, 1), stride=(1, 1))
 
-
+def get_backbone(n=4):
+    in_dim = [32, 64, 64, 64, 64]
+    out_dim = [256, 256, 768, 768, 768]
+    backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
+    backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+    backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
+    return backbone
 
 
 class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
         self.args = args
-        self.backbone = backbone
+        self.backbone = get_backbone(args.backbone)
         self.head = torch.nn.Sequential(
             nn.Conv2d(32, 32, 3, padding="same"),
             nn.Dropout2d(0.15),

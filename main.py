@@ -43,6 +43,7 @@ parser.add_argument('--learning_rate', type=float, default=1e-5, help='Learning 
 parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight decay')
 parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
 parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
+parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
