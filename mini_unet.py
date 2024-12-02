@@ -31,8 +31,9 @@ class MiniUNet(nn.Module):
         # Decoder
         # self.up1 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
         self.up1 = nn.Sequential(
-            nn.PixelShuffle(2),
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            # nn.PixelShuffle(2),
+            nn.Upsample(scale_factor=2, mode='bilinear'),
+            nn.Conv2d(256, 128, kernel_size=3, padding=1),
             nn.ReLU(),
         )
         self.dec1 = nn.Sequential(
@@ -42,8 +43,9 @@ class MiniUNet(nn.Module):
         
         # self.up2 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
         self.up2 = nn.Sequential(
-            nn.PixelShuffle(2),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            # nn.PixelShuffle(2),
+            nn.Upsample(scale_factor=2, mode='bilinear'),
+            nn.Conv2d(128, 64, kernel_size=3, padding=1),
             nn.ReLU(),
         )
         self.dec2 = nn.Sequential(
