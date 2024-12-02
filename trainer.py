@@ -10,8 +10,8 @@ batch_size = 8
 
 REFINE = True
 from sklearn.metrics import f1_score
-class trainer:
-    def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn):
+class Trainer:
+    def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args):
         self.model = model
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
@@ -23,6 +23,7 @@ class trainer:
         self.running_f1 = []
         self.step = 0
         self.validate_f1 = False
+        self.args = args
         # self.scaler = torch.GradScaler()
 
     def getgrad(self):
@@ -98,7 +99,7 @@ class trainer:
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
             self.lr_scheduler.step()
             self.scheduler_steps += 1
-            if self.scheduler_steps == 25000:
+            if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
             if train_i % 500 == 0:
@@ -155,5 +156,5 @@ class trainer:
         while True:
             try:
                 self.train_epoch()
-            except StopIteration:
+            except ZeroDivisionError:
                 break

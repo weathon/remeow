@@ -19,7 +19,7 @@ class MyModel(nn.Module):
         self.args = args
         self.backbone = backbone
         self.head = torch.nn.Sequential(
-            nn.Conv2d(64, 32, 3, padding="same"),
+            nn.Conv2d(32, 32, 3, padding="same"),
             nn.Dropout2d(0.15),
             nn.ReLU(),
             nn.Conv2d(32, 16, 3, padding="same"),
@@ -40,7 +40,29 @@ class MyModel(nn.Module):
         ) if conv3d else torch.nn.Identity()
 
         self.t_dim = nn.Linear(8, 1)
-        self.upsample = torch.nn.Upsample(scale_factor=4, mode="bicubic")
+        if self.args.mask_upsample == "interpolate":
+            self.upsample = torch.nn.Sequential(
+                torch.nn.Upsample(scale_factor=4, mode="bicubic"),
+                torch.nn.Conv2d(64, 32, 3, padding="same"),
+                torch.nn.ReLU()
+            )
+        elif self.args.mask_upsample == "transpose_conv":
+            self.upsample = nn.Sequential(
+                nn.ConvTranspose2d(64, 32, 3, 2),
+                nn.ReLU(),
+                nn.Conv2d(32, 32, 3, padding="same"),
+                nn.ReLU(),
+                nn.ConvTranspose2d(32, 32, 3, 2),
+                nn.ReLU(),
+                torch.nn.Upsample(size=(512, 512))
+            )    
+        else:
+            self.upsample = torch.nn.Sequential(
+                nn.PixelShuffle(4),
+                nn.Conv2d(4, 32, 3, padding="same"),
+                nn.ReLU()
+            )
+        
         # self.refine_gru = ConvGRU(input_size=(512, 512),
         #         input_dim=7,
         #         hidden_dim=32,
@@ -84,13 +106,15 @@ class MyModel(nn.Module):
         current = self.frame_encoder(current)
         long = self.frame_encoder(long)
         for i in range(4): 
-            noise = torch.randn_like(mask) * torch.std(mask) * 1
+            noise = torch.randn_like(mask) * torch.std(mask) * self.args.noise_level
             mask = noise.detach() + mask # += not working but = + is okay 
             X = torch.cat([mask, current, long], dim=1)
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
-            # mask = mask + delta_mask #maybe we could not do delta_mask otherwise the model will always do 0 for delta
-            mask = delta_mask
+            if self.args.refine_mode == "residual":
+                mask = mask + delta_mask
+            else:
+                mask = delta_mask
             masks.append(self.head(self.upsample(mask))) 
         
         return torch.cat(masks, dim=1)
@@ -119,10 +143,16 @@ class MyModel(nn.Module):
         return masks
 
 if __name__ == "__main__":
-    model = MyModel(None)
+    import argparse
+    parser = argparse.ArgumentParser(description="Training script")
+    parser.add_argument('--refine_mode', type=str, default="residual", help='Refine mode', choices=["residual", "direct"])
+    parser.add_argument('--noise_level', type=float, default=1, help='Noise level') 
+    parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
+    args = parser.parse_args()
+    model = MyModel(args)
     from video_dataloader import CustomDataset
     import torch
-    X, Y, ROI = CustomDataset("/home/wg25r/CDNet", "/home/wg25r/CDNet", 3, "train")[0]
+    X, Y, ROI = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", 3, "train")[0]
     pred = model(X[None])
     print(pred.shape)
     print(pred.min(), pred.max())

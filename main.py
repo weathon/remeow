@@ -1,13 +1,7 @@
 # %%
-class Args:
-    def __init__(self):
-        self.attention_probs_dropout_prob = 0.05
-        self.hidden_dropout_prob = 0.05
-        self.drop_path_rate = 0.05
-        self.classifier_dropout = 0
-        self.ksteps = 200 
 
-args = Args()
+
+
 
 # %%
 from transformers import SegformerFeatureExtractor, SegformerForSemanticSegmentation, SegformerConfig
@@ -28,7 +22,7 @@ from conv3d_with_refine import MyModel
 # from hand_attention import MyModel
 # from seg_unet import MyModel
 # from simple_conv import MyModel
-from trainer import trainer
+from trainer import Trainer
 # from is_net_backbone import ISNetBackbone
 
 from video_dataloader import CustomDataset
@@ -36,18 +30,36 @@ from video_dataloader import CustomDataset
 import wandb 
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
+import argparse
+
+
+parser = argparse.ArgumentParser(description="Training script")
+parser.add_argument('--fold', type=int, required=True, help='Fold number for cross-validation')
+parser.add_argument('--gpu', type=str, default="0", help='GPU id to use')
+parser.add_argument('--refine_mode', type=str, default="residual", help='Refine mode', choices=["residual", "direct"])
+parser.add_argument('--noise_level', type=float, default=1, help='Noise level') 
+parser.add_argument('--steps', type=int, default=25000, help='Number of steps to train')
+parser.add_argument('--learning_rate', type=float, default=1e-5, help='Learning rate') 
+parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight decay')
+parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
+args = parser.parse_args()
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+
+
+
+
+
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-2) 
+optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
-lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 25000) 
+lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps) 
 # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
 # train_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "train")
 # val_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "val")
-train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", 4, "train")
-val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", 4, "val")
+train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args.fold, "train")
+val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args.fold, "val")
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
@@ -88,13 +100,13 @@ def matching_loss(pred, target, ROI):
     
 loss_fn = iou_loss
 
-wandb.init(project="Remeow")
+wandb.init(project="Remeow", config=args)
 wandb.define_metric("pstep")
 logger = wandb
 # model = torch.nn.DataParallel(model).cuda()
 model = model.cuda()
 # model.load_state_dict(torch.load("model.pth"))
-trainer = trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn)
+trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args)
 
 
 # %%
