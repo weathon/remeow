@@ -7,14 +7,14 @@ from convGRU import ConvGRU
 from mini_unet import MiniUNet
 conv3d = True
 
-def get_backbone(n=4):
-    in_dim = [32, 64, 64, 64, 64]
-    out_dim = [256, 256, 768, 768, 768]
+def get_backbone(n):
+    n = int(n)
+    in_dim = [32, 64, 64, 64, 64][n]
+    out_dim = [256, 256, 768, 768, 768][n]
     backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
     backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
     backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
     return backbone
-
 
 class MyModel(nn.Module):
     def __init__(self, args):
@@ -111,7 +111,7 @@ class MyModel(nn.Module):
         if self.args.refine_see_bg:
             long = self.frame_encoder(long)
             
-        for i in range(4): 
+        for i in range(self.args.refine_steps - 1): 
             noise = torch.randn_like(mask) * torch.std(mask) * self.args.noise_level
             mask = noise.detach() + mask # += not working but = + is okay 
             if self.args.refine_see_bg:

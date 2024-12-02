@@ -44,8 +44,10 @@ parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight dec
 parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
 parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
 parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
+parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
+parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
 args = parser.parse_args()
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+# os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 
 
@@ -60,28 +62,28 @@ lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps)
 # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
 # train_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "train")
 # val_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "val")
-train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args.fold, "train")
-val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args.fold, "val")
+train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "train")
+val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "val")
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 
 def iou_loss(pred, target, ROI): 
     pshape = pred.shape[:1] + pred.shape[2:]
-    assert pred.shape[1] == 5, f"pred shape: {pred.shape}"
+    assert pred.shape[1] == args.refine_steps, f"pred shape: {pred.shape}"
 
     assert pshape == target.shape == ROI.shape, f"pred shape: {pshape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
     # print(torch.sigmoid(pred).max(), ROI.max(), target.max())
     # pred = torch.sigmoid(pred)[ROI>0.9] hu xi 
     
     total_loss = 0
-    for i in range(5):
+    for i in range(args.refine_steps):
         pred_ = pred[:,i][ROI>0.9]
         target_ = target.float()[ROI>0.9] 
         intersection = (pred_ * target_).sum()
         union = pred_.sum() + target_.sum() - intersection 
         iou = (intersection + 1e-6) / (union + 1e-6)
-        total_loss +=  (1 - iou) * (0.6 ** (5 - i - 1))
+        total_loss +=  (1 - iou) * (0.6 ** (args.refine_steps - i - 1))
         
     return total_loss
 

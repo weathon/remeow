@@ -10,14 +10,16 @@ from transformers import AutoImageProcessor
 IMG_SIZE = 512
 image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 class CustomDataset(Dataset):
-    def __init__(self, train_path, val_path, fold, mode='train'):
+    def __init__(self, train_path, val_path, args, mode='train'):
         self.data_path = train_path if mode == 'train' else val_path
+        fold = args.fold
+        self.args = args
         self.fold = fold
         self.mode = mode
 
         txt_file = os.path.join(val_path, f'{mode}_{fold}.txt')
         with open(txt_file, 'r') as f:
-            image_names = f.read().split("\n")
+            image_names = sorted(f.read().split("\n"))
         self.mean = torch.tensor([0.485, 0.456, 0.406] * 3)
         self.std = torch.tensor([0.229, 0.224, 0.225] * 3)
         if mode == 'train':
@@ -38,7 +40,7 @@ class CustomDataset(Dataset):
 
             ])
         else:
-            self.image_names = random.sample(image_names, min(1024, len(image_names)))
+            self.image_names = sorted(random.sample(image_names, min(1024, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
@@ -99,8 +101,8 @@ class CustomDataset(Dataset):
     
     def __getitem__(self, idx):
         image_name = self.image_names[idx]
-        long_path = os.path.join(self.data_path, 'long', image_name)
-        short_path = os.path.join(self.data_path, 'short', image_name)
+        long_path = os.path.join(self.data_path, 'long' if self.args.background_type == "mog2" else "sub_long", image_name)
+        short_path = os.path.join(self.data_path, 'short' if self.args.background_type == "mog2" else "sub_short", image_name)
         gt_path = os.path.join(self.data_path, 'gt', image_name) 
 
         long_image = np.array(Image.open(long_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
