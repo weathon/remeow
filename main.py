@@ -42,6 +42,7 @@ parser.add_argument('--steps', type=int, default=25000, help='Number of steps to
 parser.add_argument('--learning_rate', type=float, default=1e-5, help='Learning rate') 
 parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight decay')
 parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
+parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 

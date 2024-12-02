@@ -88,11 +88,12 @@ class MyModel(nn.Module):
         #     torch.nn.Conv2d(8, 1, 3),
         # ) 
         self.refine_conv = MiniUNet(in_channels=64 + 32, out_channels=64)
+        frame_dim = 16 if self.args.refine_see_bg else 32
         self.frame_encoder = torch.nn.Sequential(
             torch.nn.Conv2d(3, 8, 3, padding="same"),
             torch.nn.AvgPool2d(2), 
             torch.nn.ReLU(),
-            torch.nn.Conv2d(8, 16, 3, padding="same"),
+            torch.nn.Conv2d(8, frame_dim, 3, padding="same"),
             torch.nn.AvgPool2d(2),
             torch.nn.ReLU(),
         )
@@ -104,11 +105,16 @@ class MyModel(nn.Module):
         """
         masks = [self.head(self.upsample(mask))]
         current = self.frame_encoder(current)
-        long = self.frame_encoder(long)
+        if self.args.refine_see_bg:
+            long = self.frame_encoder(long)
+            
         for i in range(4): 
             noise = torch.randn_like(mask) * torch.std(mask) * self.args.noise_level
             mask = noise.detach() + mask # += not working but = + is okay 
-            X = torch.cat([mask, current, long], dim=1)
+            if self.args.refine_see_bg:
+                X = torch.cat([mask, current, long], dim=1)
+            else:
+                X = torch.cat([mask, current], dim=1)
             delta_mask = self.refine_conv(X) 
             delta_mask = torch.nn.functional.interpolate(delta_mask, size=(128, 128), mode="nearest")
             if self.args.refine_mode == "residual":
@@ -148,6 +154,8 @@ if __name__ == "__main__":
     parser.add_argument('--refine_mode', type=str, default="residual", help='Refine mode', choices=["residual", "direct"])
     parser.add_argument('--noise_level', type=float, default=1, help='Noise level') 
     parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
+    parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
+
     args = parser.parse_args()
     model = MyModel(args)
     from video_dataloader import CustomDataset
