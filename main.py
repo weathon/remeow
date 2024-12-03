@@ -15,7 +15,7 @@ from PIL import Image
 # from better_backbone import MyModel
 # from better_backbone_with_3d_conv import MyModel
 # from simple_3dconv import MyModel
-from conv3d_with_refine import MyModel
+# from conv3d_with_refine import MyModel
 # from cross_attn import MyModel
 # from flow import MyModel
 # from matching_model import MyModel
@@ -25,7 +25,8 @@ from conv3d_with_refine import MyModel
 from trainer import Trainer
 # from is_net_backbone import ISNetBackbone
 
-from video_dataloader import CustomDataset
+# from video_dataloader import CustomDataset
+
 # from dataloader import CustomDataset
 import wandb 
 
@@ -46,11 +47,16 @@ parser.add_argument('--refine_see_bg', action="store_true", help='If refine oper
 parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
 parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
 parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
+parser.add_argument('--histogram', action="store_true", help='If use histogram')
 args = parser.parse_args()
-# os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
-
-
+if args.histogram:
+    from histgram_3dconv_norefine import MyModel
+    from video_histgram_dataloader import CustomDataset
+else:
+    from conv3d_with_refine import MyModel
+    from video_dataloader import CustomDataset
 
 
 
