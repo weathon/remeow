@@ -57,7 +57,7 @@ class Trainer:
             Y = Y.float()
         else:
             # print("outside ", X.shape)
-            print("houbeiyangkun" * 10)
+            # print("houbeiyangkun" * 10)
             pred = self.model(X.to("cuda:0")) 
             # print(pred.shape)
             loss = self.loss_fn(pred, Y, ROI)

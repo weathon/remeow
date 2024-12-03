@@ -95,7 +95,7 @@ class MyModel(nn.Module):
         )
         
     def forward(self, X): 
-        print("inside ", X.shape)
+        # print("inside ", X.shape) 
         X, hist = X[:,:30], X[:,30:]
         # hist = hist.reshape(-1, 51, 3, 512, 512).permute(0, 2, 1, 3, 4)
         hist = hist/hist.sum()
@@ -111,7 +111,7 @@ class MyModel(nn.Module):
         # print("a" * 100)
         hist_features = torch.nn.functional.interpolate(hist_features, size=(512, 512), mode="nearest")
         # print(hist_features.shape) 
-        print("b" * 100)
+        # print("b" * 100)
         assert frames.shape[1:] == (8 if conv3d else 3, 8, 512, 512), frames.shape
         frames = frames.permute(0, 1, 3, 4, 2)
         assert frames.shape[1:] == (8 if conv3d else 3, 512, 512, 8)
@@ -121,15 +121,15 @@ class MyModel(nn.Module):
         assert X.shape[1:] == (17 if conv3d else 12, 512, 512)
         X = torch.cat([X, hist_features], dim=1)
         assert X.shape[1:] == (17 + 32 if conv3d else 12 + 32, 512, 512)
-        print("c" * 100)
+        # print("c" * 100)
         X = self.backbone(X).logits 
-        print("d" * 100)
+        # print("d" * 100)
         assert X.shape[1:] == (64, 128, 128), X.shape
 
         mask = self.upsample(X) 
-        print("e" * 100)
+        # print("e" * 100)
         mask = self.head(mask)
-        print("f" * 100)
+        # print("f" * 100)
         mask = torch.sigmoid(mask)
         return mask
     
