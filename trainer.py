@@ -6,8 +6,8 @@ def printred(text):
 
 def printgreen(text):
     print(f"\033[32m{text}\033[0m")
-batch_size = 4
-
+batch_size = 16
+gradient_accumulation = False
 REFINE = True
 from sklearn.metrics import f1_score
 class Trainer:
@@ -39,27 +39,46 @@ class Trainer:
         self.optimizer.zero_grad()
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
-        for i in range(X.shape[0]//batch_size):
-            start = i * batch_size
-            end = start + batch_size
-            pred = self.model(X[start:end]) 
-            loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
-            # self.scaler.scale(loss).backward()
+        if gradient_accumulation:
+            for i in range(X.shape[0]//batch_size):
+                start = i * batch_size
+                end = start + batch_size
+                pred = self.model(X[start:end]) 
+                loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
+                # self.scaler.scale(loss).backward()
+                loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            self.optimizer.step()
+            e = 1e-6
+            # pred = torch.sigmoid(pred)
+            pred_ = pred[:,-1][ROI[-batch_size:] > 0.9] > 0.5
+            pred_ = pred_.float()
+            Y = Y[-batch_size:][ROI[-batch_size:] > 0.9] > 0.5
+            Y = Y.float()
+        else:
+            # print("outside ", X.shape)
+            print("houbeiyangkun" * 10)
+            pred = self.model(X.to("cuda:0")) 
+            # print(pred.shape)
+            loss = self.loss_fn(pred, Y, ROI)
             loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-        self.optimizer.step()
-        
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
+            self.optimizer.step()
+            e = 1e-6
+            # pred = torch.sigmoid(pred)
+            pred_ = pred[:,-1][ROI > 0.9] > 0.5
+            pred = torch.where(ROI > 0.9, pred, 0)
+            pred_ = pred_.float()
+            Y = Y[ROI > 0.9] > 0.5
+            Y = Y.float()
+            
+
         # self.scaler.unscale_(self.optimizer)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
         
         # self.scaler.step(self.optimizer)
         # self.scaler.update()
-        e = 1e-6
-        # pred = torch.sigmoid(pred)
-        pred_ = pred[:,-1][ROI[-batch_size:] > 0.9] > 0.5
-        pred_ = pred_.float()
-        Y = Y[-batch_size:][ROI[-batch_size:] > 0.9] > 0.5
-        Y = Y.float()
+
         f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
         
         self.running_loss += [loss.item()]
@@ -96,7 +115,7 @@ class Trainer:
         pred = torch.zeros((1, 512, 512)).cuda()
         # self.scaler = torch.GradScaler()
         for train_i, (X, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
-            train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda())
+            train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda()) 
             self.lr_scheduler.step()
             self.scheduler_steps += 1
             if self.scheduler_steps == self.args.steps:

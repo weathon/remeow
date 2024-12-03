@@ -49,7 +49,7 @@ parser.add_argument('--refine_steps', type=int, default=5, help='Number of refin
 parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
 parser.add_argument('--histogram', action="store_true", help='If use histogram')
 args = parser.parse_args()
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 if args.histogram:
     from histgram_3dconv_norefine import MyModel
@@ -62,6 +62,7 @@ else:
 
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
+model = torch.nn.DataParallel(model).cuda() #should be here before optimizer, that was why no converge and error
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps) 
@@ -71,8 +72,8 @@ lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps)
 train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "train")
 val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=9, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=9, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
 
 def iou_loss(pred, target, ROI): 
     pshape = pred.shape[:1] + pred.shape[2:]
@@ -94,27 +95,14 @@ def iou_loss(pred, target, ROI):
     return total_loss
 
 
-def matching_loss(pred, target, ROI):
-    assert pred.shape == target.shape == ROI.shape, f"pred shape: {pred.shape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
-    assert len(pred.shape) == 4
-    assert pred.shape[1:] == (640, 640, 256)
-    
-    pred = pred[ROI>0.9]
-    target = target[ROI>0.9]
-    assert pred.shape[2:]==(256,)
-    matching_volume = torch.einsum("ble,ble->bll", pred, pred)
-    axis1 = pred.reshape(pred.shape[0], -1)
-    
-    matching_volume = torch.sigmoid(matching_volume) 
-    
+
     
 loss_fn = iou_loss
 
 wandb.init(project="Remeow", config=args)
 wandb.define_metric("pstep")
 logger = wandb
-# model = torch.nn.DataParallel(model).cuda()
-model = model.cuda()
+# model = model.cuda()
 # model.load_state_dict(torch.load("model.pth"))
 trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args)
 
