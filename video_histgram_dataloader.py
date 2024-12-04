@@ -10,13 +10,13 @@ from transformers import AutoImageProcessor
 IMG_SIZE = 512
 image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 
-cache = {} 
+# cache = {} 
 
-for i in os.listdir("/home/wg25r/fastdata/CDNet/hist"):
-    path = os.path.join("/home/wg25r/fastdata/CDNet", 'hist', i)
-    print(path)
-    histgram = torch.load(path, weights_only=False, map_location='cpu')
-    cache[i.replace(".pt", "")] = histgram
+# for i in os.listdir("/home/wg25r/fastdata/CDNet/hist"):
+#     path = os.path.join("/home/wg25r/fastdata/CDNet", 'hist', i)
+#     print(path)
+#     histgram = torch.load(path, weights_only=False, map_location='cpu')
+#     cache[i.replace(".pt", "")] = histgram
     
 class CustomDataset(Dataset):
     def __init__(self, train_path, val_path, args, mode='train'):
@@ -49,7 +49,7 @@ class CustomDataset(Dataset):
 
             ])
         else:
-            self.image_names = sorted(random.sample(image_names, min(1024, len(image_names))))
+            self.image_names = sorted(random.sample(image_names, min(256, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
@@ -173,13 +173,13 @@ class CustomDataset(Dataset):
                 Y = torchvision.transforms.functional.rotate(Y, angle)
                 ROI = torchvision.transforms.functional.rotate(ROI, angle)
                 
-        # histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
-        histgram = cache[video_name]
+        histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
+        # histgram = cache[video_name]
         histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
         histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
         histgram_= histgram.flatten(0, 1)
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
-        X = torch.cat([X, histgram_], dim=0)
+        X = torch.cat([X, histgram_], dim=0) 
         Y = (Y > 0.95).float()
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
 

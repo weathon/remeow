@@ -48,8 +48,9 @@ parser.add_argument('--backbone', type=str, default="4", help='Backbone size to 
 parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
 parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
 parser.add_argument('--histogram', action="store_true", help='If use histogram')
+parser.add_argument('--clip', type=float, default=1, help='Clip value')
 args = parser.parse_args()
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 if args.histogram:
     from histgram_3dconv_norefine import MyModel
@@ -63,7 +64,17 @@ else:
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
 model = torch.nn.DataParallel(model).cuda() #should be here before optimizer, that was why no converge and error
-optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+# head conv3d t_dim upsample hist_encoder
+optimizer = torch.optim.AdamW(
+    [
+        {'params': model.module.head.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.conv3d.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.t_dim.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.upsample.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.hist_encoder.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.backbone.parameters(), 'lr': args.learning_rate * 0.2, "weight_decay": args.weight_decay * 0.2},
+    ]
+    , lr=args.learning_rate, weight_decay=args.weight_decay)
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps) 
 # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
@@ -72,8 +83,8 @@ lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps)
 train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "train")
 val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=80, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=True, num_workers=80, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=50, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=50, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True) 
 
 def iou_loss(pred, target, ROI): 
     pshape = pred.shape[:1] + pred.shape[2:]

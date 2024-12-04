@@ -22,14 +22,14 @@ class MyModel(nn.Module):
         self.args = args
         self.backbone = get_backbone(args.backbone)
         self.head = torch.nn.Sequential(
-            nn.Conv2d(32, 32, 3, padding="same"),
-            nn.Dropout2d(0.15),
-            nn.ReLU(),
             nn.Conv2d(32, 16, 3, padding="same"),
             nn.Dropout2d(0.15),
             nn.ReLU(),
-            nn.Conv2d(16, 1, 3, padding="same"), 
-        )
+            nn.Conv2d(16, 8, 3, padding="same"),
+            nn.Dropout2d(0.15),
+            nn.ReLU(),
+            nn.Conv2d(8, 1, 3, padding="same"), 
+        ) 
         self.conv3d = torch.nn.Sequential(
             nn.Conv3d(3, 8, (3, 3, 3), padding="same"),
             nn.Dropout3d(0.1),
@@ -78,20 +78,17 @@ class MyModel(nn.Module):
         #     torch.nn.Conv3d(32, 32, (51, 1, 1)),
         #     torch.nn.Dropout3d(0.1),
         #     torch.nn.MaxPool3d((1, 2, 2)),
-        # )
+        # ) 
         self.hist_encoder = torch.nn.Sequential(
             # torch.nn.MaxPool2d(2),
-            torch.nn.Conv2d(153 + 3, 128, 3, padding="same"),
-            torch.nn.Dropout2d(0.1),
-            torch.nn.MaxPool2d(2),
+            torch.nn.Conv2d(153 + 3, 128, 1, padding="same"),
+            torch.nn.Dropout2d(0.3),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(128, 64, 3, padding="same"),
-            torch.nn.Dropout2d(0.1),
-            torch.nn.MaxPool2d(2),
+            torch.nn.Conv2d(128, 64, 1, padding="same"),
+            torch.nn.Dropout2d(0.3),
             torch.nn.ReLU(),
-            torch.nn.Conv2d(64, 32, (51, 1), padding="same"),
-            torch.nn.Dropout2d(0.1),
-            torch.nn.MaxPool2d(2),
+            torch.nn.Conv2d(64, 32, 1, padding="same"),
+            torch.nn.Dropout2d(0.3),
         )
         
     def forward(self, X): 
@@ -99,7 +96,8 @@ class MyModel(nn.Module):
         X, hist = X[:,:30], X[:,30:]
         # hist = hist.reshape(-1, 51, 3, 512, 512).permute(0, 2, 1, 3, 4)
         hist = hist/hist.sum()
-       
+        if self.training:
+            hist = hist + torch.randn_like(hist) * 0.1 # or should i do 1..t model 
         # print(hist_features.shape)
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]        
         current = frames[:, :3]

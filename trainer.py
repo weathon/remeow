@@ -6,7 +6,7 @@ def printred(text):
 
 def printgreen(text):
     print(f"\033[32m{text}\033[0m")
-batch_size = 16
+batch_size = 8
 gradient_accumulation = False
 REFINE = True
 from sklearn.metrics import f1_score
@@ -47,7 +47,7 @@ class Trainer:
                 loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
                 # self.scaler.scale(loss).backward()
                 loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
             self.optimizer.step()
             e = 1e-6
             # pred = torch.sigmoid(pred)
@@ -121,11 +121,11 @@ class Trainer:
             if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
-            if train_i % 500 == 0:
+            if train_i % 100 == 0:
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
-                    self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
+                    # self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
             # if train_i % 100 == 0: 
                 weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.02
                 for param_group in self.optimizer.param_groups:
@@ -143,7 +143,7 @@ class Trainer:
                 print(f"Train pred Range: {train_pred.min()}, {train_pred.max()}")
                 self.logger.log({
                                 "pstep":self.step,
-                                "weight_decay":self.optimizer.param_groups[0]["weight_decay"],
+                                "weight_decay":self.optimizer.param_groups[0]["weight_decay"], 
                                 "val_pred": self.logger.Image(val_pred[0].unsqueeze(0)),
                                 "val_gt": self.logger.Image(val_Y[0].unsqueeze(0)),
                                 "val_in": self.logger.Image(val_X[0][:3]),
@@ -157,7 +157,7 @@ class Trainer:
                                 # "train_BG1": self.logger.Image(X[-batch_size][-24:-27]),
                                 # "train_BG2": self.logger.Image(X[-batch_size][-27:]),
                                 "rough_pred": self.logger.Image(rough_pred[0].unsqueeze(0)),
-                })
+                }) 
                 
                 self.logger.log({"pstep":self.step, "val_loss": val_runnning_loss / len(self.val_dataloader), "val_f1": val_running_f1 / len(self.val_dataloader)})
                 printgreen(f"Validation Loss: {val_runnning_loss / len(self.val_dataloader)}, Validation F1: {val_running_f1 / len(self.val_dataloader)}")

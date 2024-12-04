@@ -15,7 +15,7 @@ def get_backbone(n):
     backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 if conv3d else 12, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
     backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
     return backbone
-
+  
 class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
@@ -89,7 +89,7 @@ class MyModel(nn.Module):
         #     torch.nn.ReLU(),
         #     torch.nn.Dropout2d(0.15),
         #     torch.nn.Conv2d(8, 1, 3),
-        # ) 
+        # )  
         self.refine_conv = MiniUNet(in_channels=64 + 32, out_channels=64)
         frame_dim = 16 if self.args.refine_see_bg else 32
         self.frame_encoder = torch.nn.Sequential(
