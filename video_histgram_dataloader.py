@@ -49,7 +49,7 @@ class CustomDataset(Dataset):
 
             ])
         else:
-            self.image_names = sorted(random.sample(image_names, min(256, len(image_names))))
+            self.image_names = sorted(random.sample(image_names, min(2048, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),

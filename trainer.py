@@ -121,7 +121,7 @@ class Trainer:
             if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
-            if train_i % 100 == 0:
+            if train_i % 500 == 0:
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
