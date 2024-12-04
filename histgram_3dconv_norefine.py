@@ -95,7 +95,7 @@ class MyModel(nn.Module):
         # print("inside ", X.shape) 
         X, hist = X[:,:30], X[:,30:]
         # hist = hist.reshape(-1, 51, 3, 512, 512).permute(0, 2, 1, 3, 4)
-        hist = hist/hist.sum(dim=1)
+        hist = hist/hist.sum(dim=1, keepdim=True)
         if self.training:
             hist = hist + torch.randn_like(hist) * 0.1 # or should i do 1..t model 
         # print(hist_features.shape)
