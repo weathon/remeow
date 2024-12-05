@@ -49,6 +49,7 @@ class CustomDataset(Dataset):
 
             ])
         else:
+            random.seed(19890604)
             self.image_names = sorted(random.sample(image_names, min(2048, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
@@ -58,7 +59,7 @@ class CustomDataset(Dataset):
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
 
 
-    def crop(self, in_image, long_image, short_image, gt_image, roi_image):
+    def crop(self, in_image, long_image, short_image, gt_image, roi_image, histgram):
         top = random.randint(0, IMG_SIZE//2)
         left = random.randint(0, IMG_SIZE//2) 
         width = random.randint(IMG_SIZE//2, IMG_SIZE)
@@ -73,7 +74,8 @@ class CustomDataset(Dataset):
         short_image = torchvision.transforms.functional.resized_crop(short_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
         gt_image = torchvision.transforms.functional.resized_crop(gt_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
         roi_image = torchvision.transforms.functional.resized_crop(roi_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        return in_image, long_image, short_image, gt_image, roi_image
+        histgram = torchvision.transforms.functional.resized_crop(histgram, top, left, height, width, (IMG_SIZE, IMG_SIZE))
+        return in_image, long_image, short_image, gt_image, roi_image, histgram
     
     
     
@@ -144,11 +146,19 @@ class CustomDataset(Dataset):
             in_image = image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
             in_images.append(in_image)
             
+        histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
+        histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
+        histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
+        histgram_= histgram.flatten(0, 1)
+        
         in_images = torch.cat(in_images, dim=0)
         long_image = image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         short_image = image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
-        X = torch.cat([in_images, long_image, short_image], dim=0)
         if self.mode == "train":
+            in_image, long_image, short_image, gt_image, roi_image, histgram = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+        
+        X = torch.cat([in_images, long_image, short_image], dim=0)
+        if self.mode == "train": 
             if random.random() > 0.7:
                 X = X + X * (torch.rand(X.shape[0])[:,None,None] * 0.5 - 0.25)
                 
@@ -172,12 +182,8 @@ class CustomDataset(Dataset):
                 X = torchvision.transforms.functional.rotate(X, angle)
                 Y = torchvision.transforms.functional.rotate(Y, angle)
                 ROI = torchvision.transforms.functional.rotate(ROI, angle)
-                
-        histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
-        # histgram = cache[video_name]
-        histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
-        histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
-        histgram_= histgram.flatten(0, 1)
+                histgram = torchvision.transforms.functional.rotate(histgram, angle)
+
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
         X = torch.cat([X, histgram_], dim=0) 
         Y = (Y > 0.95).float()

@@ -13,7 +13,7 @@ from sklearn.metrics import f1_score
 class Trainer:
     def __init__(self, student, teacher, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args):
         self.student = student.to("cuda:0")
-        self.teacher = teacher.to("cuda:1")
+        self.teacher = teacher.to("cuda:0")
         
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
@@ -29,7 +29,7 @@ class Trainer:
 
     def getgrad(self):
         grads = [] #it was just [0] 
-        for param in self.model.parameters():
+        for param in self.student.parameters():
             if param.grad is not None: #why need this
                 grads.append(param.grad.view(-1).cpu())
         grads = torch.cat(grads) 
@@ -39,27 +39,29 @@ class Trainer:
         teacher_dict = self.teacher.state_dict()    
         student_dict = self.student.state_dict()
         for k in teacher_dict.keys():
-            teacher_dict[k] = student_dict[k] * self.args.m + teacher_dict[k] * (1 - self.args.m)
-    
+            teacher_dict[k] = student_dict[k] * self.args.m + teacher_dict[k].to("cuda:0") * (1 - self.args.m)
+        self.teacher.load_state_dict(teacher_dict)
     def train_step(self, X_student, X_teacher, Y,ROI):  
         X_student = X_student.to("cuda:0")
-        X_teacher = X_teacher.to("cuda:1") 
-             
+        X_teacher = X_teacher.to("cuda:0") 
+        Y = Y.to("cuda:0")
+        ROI = ROI.to("cuda:0")
+        
         self.student.train()
         self.teacher.eval()
         
-        with torch.no_grad():
-            teacher_pred = torch.sigmoid(self.teacher(X_teacher) / self.args.temp)
-        
         self.optimizer.zero_grad()
-    
-        pred = self.model(X_student.to("cuda:0")) 
-        loss_teacher_student = self.loss_fn(pred, teacher_pred.to("cuda:0"), ROI)
-        loss_gt_student = self.loss_fn(pred, Y.to("cuda:0"), ROI)
-        loss = loss_teacher_student + loss_gt_student
+        
+        with torch.no_grad():
+            teacher_pred = self.teacher(X_teacher)
+        
+        pred = self.student(X_student.to("cuda:0")) 
+        loss_teacher_student = self.loss_fn(pred, teacher_pred.to("cuda:0").squeeze(1), ROI)
+        loss_gt_student = self.loss_fn(pred, Y, ROI)
+        loss = (loss_teacher_student + loss_gt_student) / 2
         
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
+        torch.nn.utils.clip_grad_norm_(self.student.parameters(), 1.0) 
         self.optimizer.step()
         e = 1e-6
         pred_ = pred[:,-1][ROI > 0.9] > 0.5
@@ -75,9 +77,13 @@ class Trainer:
         return pred[:,-1].float()
 
     def validate(self, X, Y, ROI): 
-        self.model.eval()
+        self.student.eval()
+        X = X.to("cuda:0")
+        Y = Y.to("cuda:0")
+        ROI = ROI.to("cuda:0")
+        
         with torch.no_grad():
-            pred = self.model(X)
+            pred = self.student(X)
             loss = self.loss_fn(pred, Y, ROI)
             e = 1e-6
             # pred = torch.sigmoid(pred)
@@ -132,7 +138,7 @@ class Trainer:
                                 # "val_BG2": self.logger.Image(val_X[0][-27:]),
                                 "train_pred": self.logger.Image(train_pred[0].unsqueeze(0)),
                                 "train_gt": self.logger.Image(Y[-batch_size].unsqueeze(0)),
-                                "train_in": self.logger.Image(X[-batch_size][:3]),
+                                "train_in": self.logger.Image(X_student[-batch_size][:3]),
                                 "train_roi": self.logger.Image((ROI[-batch_size].unsqueeze(0) * 255).to(torch.uint8)),
                                 # "train_BG1": self.logger.Image(X[-batch_size][-24:-27]),
                                 # "train_BG2": self.logger.Image(X[-batch_size][-27:]),
@@ -148,7 +154,7 @@ class Trainer:
                 self.step += 1
                 if self.step >= 1000:
                     raise StopIteration
-                torch.save(self.model.state_dict(), f"model.pth")
+                torch.save(self.student.state_dict(), f"model.pth")
 
     def train(self):
         self.scheduler_steps = 0

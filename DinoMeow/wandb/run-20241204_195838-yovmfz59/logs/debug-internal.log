@@ -1,0 +1,18 @@
+{"time":"2024-12-04T19:58:38.152037704-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T19:58:38.152052436-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_195838-yovmfz59/logs/debug-core.log"}
+{"time":"2024-12-04T19:58:38.152095016-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T19:58:38.152098731-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_195838-yovmfz59/logs/debug-core.log"}
+{"time":"2024-12-04T19:58:38.156037219-08:00","level":"INFO","msg":"created new stream","id":"yovmfz59"}
+{"time":"2024-12-04T19:58:38.156054532-08:00","level":"INFO","msg":"stream: started","id":"yovmfz59"}
+{"time":"2024-12-04T19:58:38.156079497-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"yovmfz59"}}
+{"time":"2024-12-04T19:58:38.1561282-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"yovmfz59"}}
+{"time":"2024-12-04T19:58:38.156115755-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"yovmfz59"}}
+{"time":"2024-12-04T19:58:38.414930606-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T19:58:38.41814729-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T20:05:11.253858782-08:00","level":"INFO","msg":"stream: closing","id":"yovmfz59"}
+{"time":"2024-12-04T20:05:11.253903238-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T20:05:11.254390529-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T20:05:12.123556068-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"yovmfz59"}}
+{"time":"2024-12-04T20:05:12.123593783-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"yovmfz59"}}
+{"time":"2024-12-04T20:05:12.123619936-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"yovmfz59"}}
+{"time":"2024-12-04T20:05:12.1236857-08:00","level":"INFO","msg":"stream: closed","id":"yovmfz59"}

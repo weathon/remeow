@@ -1,0 +1,45 @@
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 89, in <module>
+    trainer = Trainer(student, teacher, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 16, in __init__
+    self.teacher = teacher.to("cuda:1")
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1174, in to
+    return self._apply(convert)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 780, in _apply
+    module._apply(fn)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 780, in _apply
+    module._apply(fn)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 780, in _apply
+    module._apply(fn)
+  [Previous line repeated 4 more times]
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 805, in _apply
+    param_applied = fn(param)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1160, in convert
+    return t.to(
+RuntimeError: CUDA error: invalid device ordinal
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 89, in <module>
+    trainer = Trainer(student, teacher, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 16, in __init__
+    self.teacher = teacher.to("cuda:1")
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1174, in to
+    return self._apply(convert)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 780, in _apply
+    module._apply(fn)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 780, in _apply
+    module._apply(fn)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 780, in _apply
+    module._apply(fn)
+  [Previous line repeated 4 more times]
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 805, in _apply
+    param_applied = fn(param)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1160, in convert
+    return t.to(
+RuntimeError: CUDA error: invalid device ordinal
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.

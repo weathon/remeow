@@ -1,0 +1,18 @@
+{"time":"2024-12-04T18:30:09.6263415-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:30:09.626382255-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_183009-tmn4npba/logs/debug-core.log"}
+{"time":"2024-12-04T18:30:09.626489641-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:30:09.626498662-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_183009-tmn4npba/logs/debug-core.log"}
+{"time":"2024-12-04T18:30:09.634332848-08:00","level":"INFO","msg":"created new stream","id":"tmn4npba"}
+{"time":"2024-12-04T18:30:09.634379724-08:00","level":"INFO","msg":"stream: started","id":"tmn4npba"}
+{"time":"2024-12-04T18:30:09.634433362-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"tmn4npba"}}
+{"time":"2024-12-04T18:30:09.634392237-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"tmn4npba"}}
+{"time":"2024-12-04T18:30:09.634402858-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"tmn4npba"}}
+{"time":"2024-12-04T18:30:09.914875011-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T18:30:09.916312795-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T18:35:21.950308942-08:00","level":"INFO","msg":"stream: closing","id":"tmn4npba"}
+{"time":"2024-12-04T18:35:21.950380794-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T18:35:21.952054545-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T18:35:22.497799846-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"tmn4npba"}}
+{"time":"2024-12-04T18:35:22.497874179-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"tmn4npba"}}
+{"time":"2024-12-04T18:35:22.497882491-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"tmn4npba"}}
+{"time":"2024-12-04T18:35:22.497995118-08:00","level":"INFO","msg":"stream: closed","id":"tmn4npba"}

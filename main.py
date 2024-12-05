@@ -46,9 +46,11 @@ parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Ma
 parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
 parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
 parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
-parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
+parser.add_argument('--background_type', type=str, default="mog2", choices=["mog2", "sub"], help='Background type, mog2 means MOG2, sub means SuBSENSE')
 parser.add_argument('--histogram', action="store_true", help='If use histogram')
-parser.add_argument('--clip', type=float, default=1, help='Clip value')
+parser.add_argument('--clip', type=float, default=1, help='Gradient clip norm')
+parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
+parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
@@ -101,8 +103,11 @@ def iou_loss(pred, target, ROI):
         intersection = (pred_ * target_).sum()
         union = pred_.sum() + target_.sum() - intersection 
         iou = (intersection + 1e-6) / (union + 1e-6)
-        total_loss +=  (1 - iou) * (0.6 ** (args.refine_steps - i - 1))
-        
+        conf = (pred_ - 0.5).abs().mean()
+        conf_pen = conf * args.conf_penalty
+        total_loss +=  (1 - iou + conf_pen) * (0.6 ** (args.refine_steps - i - 1))
+
+    
     return total_loss
 
 

@@ -1,0 +1,234 @@
+  0%|                              | 0/8812 [01:04<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 92, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 158, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 103, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 56, in train_step
+    pred = self.model(X_student.to("cuda:0"))
+AttributeError: 'Trainer' object has no attribute 'model'
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 92, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 158, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 103, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 56, in train_step
+    pred = self.model(X_student.to("cuda:0"))
+AttributeError: 'Trainer' object has no attribute 'model'
+Exception in thread Thread-4 (_pin_memory_loop):
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.10/threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/pin_memory.py", line 55, in _pin_memory_loop
+    do_one_step()
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/pin_memory.py", line 32, in do_one_step
+    r = in_queue.get(timeout=MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/queues.py", line 122, in get
+    return _ForkingPickler.loads(res)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 496, in rebuild_storage_fd
+    fd = df.detach()
+  File "/usr/lib/python3.10/multiprocessing/resource_sharer.py", line 57, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+  File "/usr/lib/python3.10/multiprocessing/resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 502, in Client
+    c = SocketClient(address)
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 630, in SocketClient
+    s.connect(address)
+ConnectionRefusedError: [Errno 111] Connection refused
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in sys.unraisablehook: <built-in function unraisablehook>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/lib/redirect.py", line 648, in write
+    cb(data)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/wandb_run.py", line 2382, in <lambda>
+    lambda data: self._console_raw_callback("stderr", data),
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/wandb_run.py", line 403, in wrapper_fn
+    return func(self, *args, **kwargs)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/wandb_run.py", line 1545, in _console_raw_callback
+    self._backend.interface.publish_output_raw(name, data)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/interface/interface.py", line 719, in publish_output_raw
+    self._publish_output_raw(o)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/interface/interface_shared.py", line 79, in _publish_output_raw
+    self._publish(rec)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/interface/interface_sock.py", line 51, in _publish
+    self._sock_client.send_record_publish(record)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/wandb/sdk/lib/sock_client.py", line 220, in send_record_publish
+    server_req.record_publish.CopyFrom(record)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function _MultiProcessingDataLoaderIter._clean_up_worker at 0x719e75bfc700>
+Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1471, in _clean_up_worker
+    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
+  File "/usr/lib/python3.10/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
+    if not wait([self.sentinel], timeout):
+  File "/usr/lib/python3.10/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/signal_handling.py", line 67, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 3813353) exited unexpectedly with exit code 1. Details are lost due to multiprocessing. Rerunning with num_workers=0 may give better error trace.

@@ -1,0 +1,18 @@
+{"time":"2024-12-04T18:15:54.034251159-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:15:54.034267045-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_181554-cp8n7av6/logs/debug-core.log"}
+{"time":"2024-12-04T18:15:54.034320232-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:15:54.034323655-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_181554-cp8n7av6/logs/debug-core.log"}
+{"time":"2024-12-04T18:15:54.03878471-08:00","level":"INFO","msg":"created new stream","id":"cp8n7av6"}
+{"time":"2024-12-04T18:15:54.038806003-08:00","level":"INFO","msg":"stream: started","id":"cp8n7av6"}
+{"time":"2024-12-04T18:15:54.038832036-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"cp8n7av6"}}
+{"time":"2024-12-04T18:15:54.038829356-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"cp8n7av6"}}
+{"time":"2024-12-04T18:15:54.038821744-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"cp8n7av6"}}
+{"time":"2024-12-04T18:15:54.289095596-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T18:15:54.290778446-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T18:19:02.289195171-08:00","level":"INFO","msg":"stream: closing","id":"cp8n7av6"}
+{"time":"2024-12-04T18:19:02.289254462-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T18:19:02.290018061-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T18:19:02.98277868-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"cp8n7av6"}}
+{"time":"2024-12-04T18:19:02.982866968-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"cp8n7av6"}}
+{"time":"2024-12-04T18:19:02.982860121-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"cp8n7av6"}}
+{"time":"2024-12-04T18:19:02.983003638-08:00","level":"INFO","msg":"stream: closed","id":"cp8n7av6"}

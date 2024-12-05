@@ -1,0 +1,18 @@
+{"time":"2024-12-04T19:38:34.303564468-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T19:38:34.303595234-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_193834-idobvwi6/logs/debug-core.log"}
+{"time":"2024-12-04T19:38:34.30368975-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T19:38:34.303699442-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_193834-idobvwi6/logs/debug-core.log"}
+{"time":"2024-12-04T19:38:34.311667429-08:00","level":"INFO","msg":"created new stream","id":"idobvwi6"}
+{"time":"2024-12-04T19:38:34.311721936-08:00","level":"INFO","msg":"stream: started","id":"idobvwi6"}
+{"time":"2024-12-04T19:38:34.31177433-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"idobvwi6"}}
+{"time":"2024-12-04T19:38:34.311745295-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"idobvwi6"}}
+{"time":"2024-12-04T19:38:34.311739287-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"idobvwi6"}}
+{"time":"2024-12-04T19:38:34.56654988-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T19:38:34.568524814-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T19:40:21.306105965-08:00","level":"INFO","msg":"stream: closing","id":"idobvwi6"}
+{"time":"2024-12-04T19:40:21.306182275-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T19:40:21.306893196-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T19:40:21.839685305-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"idobvwi6"}}
+{"time":"2024-12-04T19:40:21.839733847-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"idobvwi6"}}
+{"time":"2024-12-04T19:40:21.839786697-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"idobvwi6"}}
+{"time":"2024-12-04T19:40:21.839898022-08:00","level":"INFO","msg":"stream: closed","id":"idobvwi6"}

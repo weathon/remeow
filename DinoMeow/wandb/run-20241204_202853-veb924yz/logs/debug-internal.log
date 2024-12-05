@@ -1,0 +1,18 @@
+{"time":"2024-12-04T20:28:53.918212164-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T20:28:53.918228014-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_202853-veb924yz/logs/debug-core.log"}
+{"time":"2024-12-04T20:28:53.918266426-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T20:28:53.918270713-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_202853-veb924yz/logs/debug-core.log"}
+{"time":"2024-12-04T20:28:53.922352724-08:00","level":"INFO","msg":"created new stream","id":"veb924yz"}
+{"time":"2024-12-04T20:28:53.922367388-08:00","level":"INFO","msg":"stream: started","id":"veb924yz"}
+{"time":"2024-12-04T20:28:53.922396765-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"veb924yz"}}
+{"time":"2024-12-04T20:28:53.922476816-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"veb924yz"}}
+{"time":"2024-12-04T20:28:53.922503798-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"veb924yz"}}
+{"time":"2024-12-04T20:28:54.150889485-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T20:28:54.152694208-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T20:35:25.036670233-08:00","level":"INFO","msg":"stream: closing","id":"veb924yz"}
+{"time":"2024-12-04T20:35:25.036698379-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T20:35:25.037210563-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T20:35:26.864969054-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"veb924yz"}}
+{"time":"2024-12-04T20:35:26.865037269-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"veb924yz"}}
+{"time":"2024-12-04T20:35:26.865071316-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"veb924yz"}}
+{"time":"2024-12-04T20:35:26.865176088-08:00","level":"INFO","msg":"stream: closed","id":"veb924yz"}

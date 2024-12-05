@@ -1,0 +1,18 @@
+{"time":"2024-12-04T23:15:27.853140498-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T23:15:27.853173167-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_231527-rg8pikll/logs/debug-core.log"}
+{"time":"2024-12-04T23:15:27.853273143-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T23:15:27.853282398-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_231527-rg8pikll/logs/debug-core.log"}
+{"time":"2024-12-04T23:15:27.86173653-08:00","level":"INFO","msg":"created new stream","id":"rg8pikll"}
+{"time":"2024-12-04T23:15:27.86178096-08:00","level":"INFO","msg":"stream: started","id":"rg8pikll"}
+{"time":"2024-12-04T23:15:27.861837374-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"rg8pikll"}}
+{"time":"2024-12-04T23:15:27.86182288-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"rg8pikll"}}
+{"time":"2024-12-04T23:15:27.861826584-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"rg8pikll"}}
+{"time":"2024-12-04T23:15:28.127431818-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T23:15:28.130262213-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T23:16:40.707050958-08:00","level":"INFO","msg":"stream: closing","id":"rg8pikll"}
+{"time":"2024-12-04T23:16:40.707113492-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T23:16:40.70769711-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T23:16:41.472553-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"rg8pikll"}}
+{"time":"2024-12-04T23:16:41.472620325-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"rg8pikll"}}
+{"time":"2024-12-04T23:16:41.472644134-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"rg8pikll"}}
+{"time":"2024-12-04T23:16:41.472747541-08:00","level":"INFO","msg":"stream: closed","id":"rg8pikll"}

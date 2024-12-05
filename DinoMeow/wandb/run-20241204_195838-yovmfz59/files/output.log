@@ -1,0 +1,20 @@
+100%|█████████████████████| 256/256 [04:52<00:00,  1.14s/it]
+[31mEpoch 0, Step 0, Loss: 1.2122418880462646, F1: 0.8829453587532043[0m
+  0%|                              | 0/8812 [05:45<?, ?it/s]
+Train pred Range: 0.0, 1.0
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 164, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 142, in train_epoch
+    "train_in": self.logger.Image(X[-batch_size][:3]),
+NameError: name 'X' is not defined
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 164, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 142, in train_epoch
+    "train_in": self.logger.Image(X[-batch_size][:3]),
+NameError: name 'X' is not defined

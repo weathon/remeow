@@ -1,26 +1,30 @@
-from transformers import BeitForSemanticSegmentation
+from transformers import BeitForSemanticSegmentation, SegformerConfig
 import torch.nn as nn
 import torch
 from transformers import SegformerForSemanticSegmentation
 
-from convGRU import ConvGRU
-from mini_unet import MiniUNet
 conv3d = True
 
-def get_backbone(n):
+def get_backbone(n, dropout):
     n = int(n)
     in_dim = [32, 64, 64, 64, 64][n]
     out_dim = [256, 256, 768, 768, 768][n]
-    backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
+    config = SegformerConfig.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
+    config.attention_probs_dropout_prob = dropout
+    config.hidden_dropout_prob = dropout
+    backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
     backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + 32 if conv3d else 12 + 32, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
     backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
     return backbone
 
+
+
 class MyModel(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, role):
         super(MyModel, self).__init__() 
         self.args = args
-        self.backbone = get_backbone(args.backbone)
+        self.role = role
+        self.backbone = get_backbone(args.backbone, dropout=self.args.dropout if self.role == "student" else 0) 
         self.head = torch.nn.Sequential(
             nn.Conv2d(32, 16, 3, padding="same"),
             nn.Dropout2d(0.15),
@@ -126,9 +130,12 @@ class MyModel(nn.Module):
 
         mask = self.upsample(X) 
         # print("e" * 100)
-        mask = self.head(mask)
+        mask = self.head(mask) 
         # print("f" * 100)
-        mask = torch.sigmoid(mask)
+        if self.role == "teacher":
+            mask = torch.sigmoid(mask / self.args.temp)
+        else:
+            mask = torch.sigmoid(mask)
         return mask
     
 def iou_loss(pred, target, ROI): 

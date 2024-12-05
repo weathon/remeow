@@ -1,0 +1,18 @@
+{"time":"2024-12-04T20:38:36.020394183-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T20:38:36.020409342-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_203836-2z0qoeew/logs/debug-core.log"}
+{"time":"2024-12-04T20:38:36.020447754-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T20:38:36.020451421-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_203836-2z0qoeew/logs/debug-core.log"}
+{"time":"2024-12-04T20:38:36.024550333-08:00","level":"INFO","msg":"created new stream","id":"2z0qoeew"}
+{"time":"2024-12-04T20:38:36.02456791-08:00","level":"INFO","msg":"stream: started","id":"2z0qoeew"}
+{"time":"2024-12-04T20:38:36.024588042-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"2z0qoeew"}}
+{"time":"2024-12-04T20:38:36.024637644-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"2z0qoeew"}}
+{"time":"2024-12-04T20:38:36.024666001-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"2z0qoeew"}}
+{"time":"2024-12-04T20:38:36.241012969-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T20:38:36.24345101-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T20:45:57.805186278-08:00","level":"INFO","msg":"stream: closing","id":"2z0qoeew"}
+{"time":"2024-12-04T20:45:57.805272968-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T20:45:57.805865914-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T20:45:58.489872265-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"2z0qoeew"}}
+{"time":"2024-12-04T20:45:58.489980274-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"2z0qoeew"}}
+{"time":"2024-12-04T20:45:58.48997055-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"2z0qoeew"}}
+{"time":"2024-12-04T20:45:58.490186585-08:00","level":"INFO","msg":"stream: closed","id":"2z0qoeew"}

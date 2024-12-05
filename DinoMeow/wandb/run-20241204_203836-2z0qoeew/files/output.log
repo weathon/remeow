@@ -1,0 +1,29 @@
+100%|███████████████████████| 64/64 [01:14<00:00,  1.16s/it]
+[31mEpoch 0, Step 0, Loss: 0.5930131077766418, F1: 0.9021806120872498[0m
+  0%|                  | 6/8812 [06:34<160:39:47, 65.68s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.4572324752807617, Validation F1: 0.6744566559791565[0m
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 164, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 109, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 77, in train_step
+    self.update_teacher()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 42, in update_teacher
+    teacher_dict[k] = student_dict[k] * self.args.m + teacher_dict[k].to("cuda:0") * (1 - self.args.m)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 164, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 109, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 77, in train_step
+    self.update_teacher()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 42, in update_teacher
+    teacher_dict[k] = student_dict[k] * self.args.m + teacher_dict[k].to("cuda:0") * (1 - self.args.m)
+KeyboardInterrupt

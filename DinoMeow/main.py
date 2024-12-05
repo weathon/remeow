@@ -30,7 +30,7 @@ parser.add_argument('--note', type=str, default="", help='Note for this run (for
 parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
 parser.add_argument('--m', type=float, default=0.99, help='Exponential moving average decay')
 parser.add_argument('--dropout', type=float, default=0.1, help="Drop for student")
-parser.add_argument('--temp', type=float, default=4, help="Temp for teacher model")
+parser.add_argument('--temp', type=float, default=0.5, help="Temp for teacher model")
 args = parser.parse_args()
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
@@ -40,13 +40,15 @@ from video_histgram_dataloader import CustomDataset
 
 
 
-student = MyModel(args) 
-student = torch.nn.DataParallel(student, "student").cuda() 
-student.load_state_dict(torch.load("model.pth"))
+student = MyModel(args, "student") 
+student = torch.nn.DataParallel(student, device_ids=[0]).cuda() 
+student.load_state_dict(torch.load("../model.pth", weights_only=False, map_location="cpu"))
 
-teacher = MyModel(args)
-teacher = torch.nn.DataParallel(teacher, "teacher").cuda()
-teacher.load_state_dict(torch.load("model.pth"))
+
+teacher = MyModel(args, "teacher")
+teacher = torch.nn.DataParallel(teacher, device_ids=[0]).cuda()
+teacher.load_state_dict(torch.load("../model.pth", weights_only=False, map_location="cpu"))
+
 
 optimizer = torch.optim.AdamW(student.module.head.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
@@ -56,8 +58,8 @@ lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps)
 train_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "train")
 val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "val")
 
-train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True) 
+train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=20, persistent_workers=True, prefetch_factor=2, drop_last=True)
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=8, shuffle=True, num_workers=20, persistent_workers=True, prefetch_factor=2, drop_last=True) 
 
 def iou_loss(pred, target, ROI): 
     pshape = pred.shape[:1] + pred.shape[2:]

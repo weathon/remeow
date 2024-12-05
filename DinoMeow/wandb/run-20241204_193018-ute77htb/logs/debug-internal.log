@@ -1,0 +1,18 @@
+{"time":"2024-12-04T19:30:18.876799876-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T19:30:18.876816093-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_193018-ute77htb/logs/debug-core.log"}
+{"time":"2024-12-04T19:30:18.876863558-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T19:30:18.87686739-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_193018-ute77htb/logs/debug-core.log"}
+{"time":"2024-12-04T19:30:18.881319971-08:00","level":"INFO","msg":"created new stream","id":"ute77htb"}
+{"time":"2024-12-04T19:30:18.881339773-08:00","level":"INFO","msg":"stream: started","id":"ute77htb"}
+{"time":"2024-12-04T19:30:18.8813667-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"ute77htb"}}
+{"time":"2024-12-04T19:30:18.881385682-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"ute77htb"}}
+{"time":"2024-12-04T19:30:18.881353971-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"ute77htb"}}
+{"time":"2024-12-04T19:30:19.075658671-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T19:30:19.076752263-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T19:34:14.70360132-08:00","level":"INFO","msg":"stream: closing","id":"ute77htb"}
+{"time":"2024-12-04T19:34:14.703679041-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T19:34:14.704370126-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T19:34:15.584780397-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"ute77htb"}}
+{"time":"2024-12-04T19:34:15.584893571-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"ute77htb"}}
+{"time":"2024-12-04T19:34:15.584875774-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"ute77htb"}}
+{"time":"2024-12-04T19:34:15.585071202-08:00","level":"INFO","msg":"stream: closed","id":"ute77htb"}

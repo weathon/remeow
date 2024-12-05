@@ -1,0 +1,19 @@
+ 44%|██████████             | 28/64 [00:50<01:04,  1.79s/it]
+[31mEpoch 0, Step 0, Loss: 0.9830136299133301, F1: 0.06768158078193665[0m
+  0%|                              | 0/8812 [01:12<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 126, in train_epoch
+    val_loss, val_f1, val_pred, rough_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 126, in train_epoch
+    val_loss, val_f1, val_pred, rough_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
+KeyboardInterrupt

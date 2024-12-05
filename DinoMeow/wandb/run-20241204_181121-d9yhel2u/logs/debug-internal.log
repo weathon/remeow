@@ -1,0 +1,14 @@
+{"time":"2024-12-04T18:11:21.85483776-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:11:21.854854585-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_181121-d9yhel2u/logs/debug-core.log"}
+{"time":"2024-12-04T18:11:21.854901329-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:11:21.854905124-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_181121-d9yhel2u/logs/debug-core.log"}
+{"time":"2024-12-04T18:11:21.859203966-08:00","level":"INFO","msg":"created new stream","id":"d9yhel2u"}
+{"time":"2024-12-04T18:11:21.859223666-08:00","level":"INFO","msg":"stream: started","id":"d9yhel2u"}
+{"time":"2024-12-04T18:11:21.859237015-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"d9yhel2u"}}
+{"time":"2024-12-04T18:11:21.859249911-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"d9yhel2u"}}
+{"time":"2024-12-04T18:11:21.859277597-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"d9yhel2u"}}
+{"time":"2024-12-04T18:11:22.093072928-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T18:11:22.095281469-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T18:14:27.037639879-08:00","level":"INFO","msg":"stream: closing","id":"d9yhel2u"}
+{"time":"2024-12-04T18:14:27.037744043-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T18:14:27.03823786-08:00","level":"INFO","msg":"Stopped system monitor"}

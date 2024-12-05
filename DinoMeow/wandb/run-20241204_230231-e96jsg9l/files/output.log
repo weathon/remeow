@@ -1,0 +1,25 @@
+100%|███████████████████████| 64/64 [01:31<00:00,  1.43s/it]
+[31mEpoch 0, Step 0, Loss: 0.820974588394165, F1: 0.07671967148780823[0m
+  3%|▌                 | 258/8812 [12:04<6:40:04,  2.81s/it]
+Train pred Range: 0.0, 0.5255115032196045
+[32mValidation Loss: 0.9428552389144897, Validation F1: 0.16401980817317963[0m
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 108, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 68, in train_step
+    pred = torch.where(ROI > 0.9, pred, 0)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 108, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 68, in train_step
+    pred = torch.where(ROI > 0.9, pred, 0)
+KeyboardInterrupt

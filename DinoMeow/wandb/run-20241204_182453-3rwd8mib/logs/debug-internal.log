@@ -1,0 +1,18 @@
+{"time":"2024-12-04T18:24:53.2199851-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:24:53.220001322-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_182453-3rwd8mib/logs/debug-core.log"}
+{"time":"2024-12-04T18:24:53.22004335-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T18:24:53.220046822-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_182453-3rwd8mib/logs/debug-core.log"}
+{"time":"2024-12-04T18:24:53.224434249-08:00","level":"INFO","msg":"created new stream","id":"3rwd8mib"}
+{"time":"2024-12-04T18:24:53.22445251-08:00","level":"INFO","msg":"stream: started","id":"3rwd8mib"}
+{"time":"2024-12-04T18:24:53.224478171-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"3rwd8mib"}}
+{"time":"2024-12-04T18:24:53.224579294-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"3rwd8mib"}}
+{"time":"2024-12-04T18:24:53.224513143-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"3rwd8mib"}}
+{"time":"2024-12-04T18:24:53.422304483-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T18:24:53.424688939-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-04T18:28:16.868377431-08:00","level":"INFO","msg":"stream: closing","id":"3rwd8mib"}
+{"time":"2024-12-04T18:28:16.868450256-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-04T18:28:16.869233828-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-04T18:28:17.471841124-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"3rwd8mib"}}
+{"time":"2024-12-04T18:28:17.471959657-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"3rwd8mib"}}
+{"time":"2024-12-04T18:28:17.471945377-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"3rwd8mib"}}
+{"time":"2024-12-04T18:28:17.472176705-08:00","level":"INFO","msg":"stream: closed","id":"3rwd8mib"}

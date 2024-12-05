@@ -50,7 +50,7 @@ class CustomDataset(Dataset):
             ])
         else:
             random.seed(19890604)
-            self.image_names = sorted(random.sample(image_names, min(2048, len(image_names))))
+            self.image_names = sorted(random.sample(image_names, min(512, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
@@ -59,7 +59,7 @@ class CustomDataset(Dataset):
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
 
 
-    def crop(self, in_image, long_image, short_image, gt_image, roi_image):
+    def crop(self, in_image, long_image, short_image, gt_image, roi_image, histgram):
         top = random.randint(0, IMG_SIZE//2)
         left = random.randint(0, IMG_SIZE//2) 
         width = random.randint(IMG_SIZE//2, IMG_SIZE)
@@ -74,7 +74,8 @@ class CustomDataset(Dataset):
         short_image = torchvision.transforms.functional.resized_crop(short_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
         gt_image = torchvision.transforms.functional.resized_crop(gt_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
         roi_image = torchvision.transforms.functional.resized_crop(roi_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        return in_image, long_image, short_image, gt_image, roi_image
+        histgram = torchvision.transforms.functional.resized_crop(histgram, top, left, height, width, (IMG_SIZE, IMG_SIZE))
+        return in_image, long_image, short_image, gt_image, roi_image, histgram
     
     
     
@@ -133,14 +134,18 @@ class CustomDataset(Dataset):
             if random.random() > 0.9:
                 long_image = self.strong_pan(long_image)
                 short_image = self.weak_pan(short_image) 
-            if random.random() > 0.9:
+            if random.random() > 0.5:
                 long_image = long_image + long_image * (torch.rand(1) * 0.5 - 0.25)
-            if random.random() > 0.9:
+            if random.random() > 0.5:
                 short_image = short_image + short_image * (torch.rand(1) * 0.5 - 0.25)
             if random.random() > 0.7:
                 short_image = self.bg_trans(short_image)
             if random.random() > 0.7:
                 long_image = self.bg_trans(long_image)
+
+                
+        
+ 
                 
         in_images = []
         for i in range(0,80,10):
@@ -159,6 +164,12 @@ class CustomDataset(Dataset):
         long_image_non_distorted = image_processor(images=long_image_non_distorted, return_tensors='pt', do_rescale=False)['pixel_values'][0]
         short_image_non_distorted = image_processor(images=short_image_non_distorted, return_tensors='pt', do_rescale=False)['pixel_values'][0]
         
+        histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
+        histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
+        histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
+        histgram_= histgram.flatten(0, 1)
+        if self.mode == "train":
+            in_image, long_image, short_image, gt_image, roi_image, histgram = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
         X = torch.cat([in_images, long_image, short_image], dim=0)
         X_non_distorted = torch.cat([in_images, long_image_non_distorted, short_image_non_distorted], dim=0)
         
@@ -170,6 +181,14 @@ class CustomDataset(Dataset):
         Y = gt_image
         Y = transforms.functional.resize(Y, (IMG_SIZE, IMG_SIZE))
         Y = Y/255
+        
+        # if random.random() > 0:
+        #     # 10 * 10 kernal high pass 
+        #     kernal = torch.tensor([[1, 0, -1], [1, 0, -1], [1, 0, -1]]) 
+        #     kernal = kernal.to(torch.float32).view(1, 3, 3).repeat(X.shape[0], 1, 1)
+        #     X = torch.nn.functional.conv2d(X.unsqueeze(0), kernal.unsqueeze(0), padding=1).squeeze(0)
+         
+        
         ROI = ROI/255
         ROI[0,0]=1
         ROI[0,1]=0
@@ -189,12 +208,9 @@ class CustomDataset(Dataset):
                 Y = torchvision.transforms.functional.rotate(Y, angle)
                 ROI = torchvision.transforms.functional.rotate(ROI, angle)
                 X_non_distorted = torchvision.transforms.functional.rotate(X_non_distorted, angle)
-             
+                histgram = torchvision.transforms.functional.rotate(histgram, angle)
            
-        histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
-        histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
-        histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
-        histgram_= histgram.flatten(0, 1)
+
         X = torch.cat([X, histgram_], dim=0) 
         X_non_distorted = torch.cat([X_non_distorted, histgram_], dim=0)
         Y = (Y > 0.95).float()
@@ -202,7 +218,7 @@ class CustomDataset(Dataset):
 
 
 if __name__ == "__main__":
-    import argparse
+    import argparse 
     import shlex
     import cv2
     
@@ -220,10 +236,10 @@ if __name__ == "__main__":
     parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
     argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2'
     args = parser.parse_args(shlex.split(argString))
-    X, X_non_distorted, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[0]
+    X, X_non_distorted, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[random.randint(3000, 6000)]
     print(X.shape, X_non_distorted.shape, Y.shape, ROI.shape)
-    img = X[3:6].permute(1, 2, 0).cpu().numpy()
-    img_non_distorted = X_non_distorted[3:6].permute(1, 2, 0).cpu().numpy()
+    img = X[:3].permute(1, 2, 0).cpu().numpy()
+    img_non_distorted = X_non_distorted[:3].permute(1, 2, 0).cpu().numpy()
     img = (img - img.min()) / (img.max() - img.min()) * 255
     img_non_distorted = (img_non_distorted - img_non_distorted.min()) / (img_non_distorted.max() - img_non_distorted.min()) * 255
     cv2.imwrite("img.png", img)

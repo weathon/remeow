@@ -1,0 +1,58 @@
+  0%|                              | 0/8812 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 107, in train_epoch
+    for train_i, (X_student, X_teacher, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1344, in _next_data
+    return self._process_data(data)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1370, in _process_data
+    data.reraise()
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/_utils.py", line 706, in reraise
+    raise exception
+UnboundLocalError: Caught UnboundLocalError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 309, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/wg25r/remeow/DinoMeow/video_histgram_dataloader.py", line 166, in __getitem__
+    in_image, long_image, short_image, gt_image, roi_image, histgram = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+UnboundLocalError: local variable 'histgram' referenced before assignment
+
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 107, in train_epoch
+    for train_i, (X_student, X_teacher, Y, ROI) in enumerate(tqdm.tqdm(self.train_dataloader, ncols=60)):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/tqdm/std.py", line 1181, in __iter__
+    for obj in iterable:
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1344, in _next_data
+    return self._process_data(data)
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1370, in _process_data
+    data.reraise()
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/_utils.py", line 706, in reraise
+    raise exception
+UnboundLocalError: Caught UnboundLocalError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 309, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/wg25r/.local/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/wg25r/remeow/DinoMeow/video_histgram_dataloader.py", line 166, in __getitem__
+    in_image, long_image, short_image, gt_image, roi_image, histgram = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+UnboundLocalError: local variable 'histgram' referenced before assignment
