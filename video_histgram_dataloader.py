@@ -57,24 +57,26 @@ class CustomDataset(Dataset):
 
             ])
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
-
+        self.random_resized_crop = transforms.RandomResizedCrop(IMG_SIZE, scale=(0.25, 1.5), ratio=(0.5, 1.5))
 
     def crop(self, in_image, long_image, short_image, gt_image, roi_image, histgram):
-        top = random.randint(0, IMG_SIZE//2)
-        left = random.randint(0, IMG_SIZE//2) 
-        width = random.randint(IMG_SIZE//2, IMG_SIZE)
-        aspect_ratio = random.uniform(0.5, 1.5)
-        height = int(width * aspect_ratio)
+        stacked = torch.cat([in_image, long_image, short_image, gt_image, roi_image, histgram], dim=0)
+        cropped = self.random_resized_crop(stacked)
         
-        width = min(width, IMG_SIZE - left)
-        height = min(height, IMG_SIZE - top)
-
-        in_image = torchvision.transforms.functional.resized_crop(in_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        long_image = torchvision.transforms.functional.resized_crop(long_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        short_image = torchvision.transforms.functional.resized_crop(short_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        gt_image = torchvision.transforms.functional.resized_crop(gt_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        roi_image = torchvision.transforms.functional.resized_crop(roi_image, top, left, height, width, (IMG_SIZE, IMG_SIZE))
-        histgram = torchvision.transforms.functional.resized_crop(histgram, top, left, height, width, (IMG_SIZE, IMG_SIZE))
+        pointer0 = 0
+        pointer1 = len(in_image)
+        pointer2 = pointer1 + len(long_image)
+        pointer3 = pointer2 + len(short_image)
+        pointer4 = pointer3 + len(gt_image)
+        pointer5 = pointer4 + len(roi_image)
+        
+        in_image = cropped[pointer0:pointer1]
+        long_image = cropped[pointer1:pointer2]
+        short_image = cropped[pointer2:pointer3]
+        gt_image = cropped[pointer3:pointer4]
+        roi_image = cropped[pointer4:pointer5]
+        histgram = cropped[pointer5:] 
+        
         return in_image, long_image, short_image, gt_image, roi_image, histgram
     
     
@@ -149,14 +151,26 @@ class CustomDataset(Dataset):
         histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
         histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
         histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
-        histgram_= histgram.flatten(0, 1)
+        histgram = histgram.flatten(0, 1)
         
         in_images = torch.cat(in_images, dim=0)
         long_image = image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         short_image = image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
-            in_image, long_image, short_image, gt_image, roi_image, histgram = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
-        
+            in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+            assert in_image_.shape == in_images.shape
+            assert long_image_.shape == long_image.shape
+            assert short_image_.shape == short_image.shape
+            assert gt_image_.shape == gt_image.shape
+            assert roi_image_.shape == roi_image.shape
+            assert histgram_.shape == histgram.shape
+            in_images = in_image_
+            long_image = long_image_
+            short_image = short_image_
+            gt_image = gt_image_
+            roi_image = roi_image_
+            histgram = histgram_
+            
         X = torch.cat([in_images, long_image, short_image], dim=0)
         if self.mode == "train": 
             if random.random() > 0.7:
@@ -193,6 +207,7 @@ class CustomDataset(Dataset):
 if __name__ == "__main__":
     import argparse
     import shlex
+    import cv2
     parser = argparse.ArgumentParser(description="Training script")
     parser.add_argument('--fold', type=int, required=True, help='Fold number for cross-validation')
     parser.add_argument('--gpu', type=str, default="0", help='GPU id to use')
@@ -208,4 +223,5 @@ if __name__ == "__main__":
     argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2'
     args = parser.parse_args(shlex.split(argString))
     X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[0]
+    cv2.imwrite("test.jpg", X[:3].numpy().transpose(1, 2, 0) * 255)
     print(X.shape, Y.shape, ROI.shape)
