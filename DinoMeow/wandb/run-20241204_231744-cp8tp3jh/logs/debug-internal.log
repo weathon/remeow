@@ -1,0 +1,58 @@
+{"time":"2024-12-04T23:17:44.124890572-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T23:17:44.124907784-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_231744-cp8tp3jh/logs/debug-core.log"}
+{"time":"2024-12-04T23:17:44.124963381-08:00","level":"INFO","msg":"using version","core version":"0.18.1"}
+{"time":"2024-12-04T23:17:44.124966813-08:00","level":"INFO","msg":"created symlink","path":"/home/wg25r/remeow/DinoMeow/wandb/run-20241204_231744-cp8tp3jh/logs/debug-core.log"}
+{"time":"2024-12-04T23:17:44.129449528-08:00","level":"INFO","msg":"created new stream","id":"cp8tp3jh"}
+{"time":"2024-12-04T23:17:44.129471016-08:00","level":"INFO","msg":"stream: started","id":"cp8tp3jh"}
+{"time":"2024-12-04T23:17:44.12949686-08:00","level":"INFO","msg":"sender: started","stream_id":{"value":"cp8tp3jh"}}
+{"time":"2024-12-04T23:17:44.129496574-08:00","level":"INFO","msg":"writer: Do: started","stream_id":{"value":"cp8tp3jh"}}
+{"time":"2024-12-04T23:17:44.129582734-08:00","level":"INFO","msg":"handler: started","stream_id":{"value":"cp8tp3jh"}}
+{"time":"2024-12-04T23:17:44.512115625-08:00","level":"INFO","msg":"wandb-core","!BADKEY":null}
+{"time":"2024-12-04T23:17:44.513282762-08:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-05T01:47:46.649220185-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:47:47.326528229-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:48:06.231352026-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:48:07.135292326-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:48:28.265035488-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:48:28.950814922-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:48:53.72137936-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:48:54.932113761-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:49:28.491197296-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:49:30.685496017-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:50:17.971286458-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:50:25.257419445-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:51:34.736235831-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:51:42.351437916-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:52:34.753105182-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:52:42.396136028-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:53:34.766522582-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:53:51.194185564-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:54:51.244507994-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:54:51.529561711-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:55:51.542899158-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:56:07.696704223-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:57:08.310172361-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:57:24.490029728-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:58:24.532957101-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T01:58:25.072434312-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:59:25.086074413-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T01:59:33.09693872-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:00:25.099435545-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T02:00:33.14073108-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:01:25.112094721-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T02:01:41.729145221-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:02:41.782677525-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:02:41.877234551-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T02:03:58.641341627-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T02:03:59.033861233-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:04:58.654329305-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T02:05:16.720292226-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:05:58.667764464-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/graphql"}
+{"time":"2024-12-05T02:06:33.515703607-08:00","level":"INFO","msg":"api: retrying HTTP error","status":502,"url":"https://api.wandb.ai/files/3dsmile/Remeow/cp8tp3jh/file_stream"}
+{"time":"2024-12-05T02:36:30.726314247-08:00","level":"INFO","msg":"stream: closing","id":"cp8tp3jh"}
+{"time":"2024-12-05T02:36:30.726360699-08:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-05T02:36:30.727701256-08:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-05T02:36:32.545748961-08:00","level":"INFO","msg":"sender: closed","stream_id":{"value":"cp8tp3jh"}}
+{"time":"2024-12-05T02:36:32.545733767-08:00","level":"INFO","msg":"writer: Close: closed","stream_id":{"value":"cp8tp3jh"}}
+{"time":"2024-12-05T02:36:32.545663757-08:00","level":"INFO","msg":"handler: closed","stream_id":{"value":"cp8tp3jh"}}
+{"time":"2024-12-05T02:36:32.545896951-08:00","level":"INFO","msg":"stream: closed","id":"cp8tp3jh"}

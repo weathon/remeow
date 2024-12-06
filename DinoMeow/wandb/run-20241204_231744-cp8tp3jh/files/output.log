@@ -1,0 +1,79 @@
+100%|███████████████████████| 64/64 [01:34<00:00,  1.48s/it]
+[31mEpoch 0, Step 0, Loss: 0.9019103050231934, F1: 0.33132073283195496[0m
+100%|███████████████████████| 64/64 [01:25<00:00,  1.33s/it]
+Train pred Range: 0.0, 0.9993550181388855
+[32mValidation Loss: 0.740206241607666, Validation F1: 0.39603570103645325[0m
+
+Mean Grad: -1.609044630868084e-08, Max Grad: 0.02758193388581276, Min Grad: -0.03284288942813873
+[31mEpoch 1, Step 500, Loss: 0.9380245395898819, F1: 0.20920479188725874[0m
+100%|███████████████████████| 64/64 [01:18<00:00,  1.23s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7459498643875122, Validation F1: 0.3880656063556671[0m
+
+Mean Grad: -1.104361828652145e-07, Max Grad: 0.022994577884674072, Min Grad: -0.07198470830917358
+[31mEpoch 2, Step 1000, Loss: 0.9373656611442566, F1: 0.20657971109647302[0m
+100%|███████████████████████| 64/64 [01:18<00:00,  1.23s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7536970376968384, Validation F1: 0.37452104687690735[0m
+
+Mean Grad: -9.176982729286465e-09, Max Grad: 0.022358588874340057, Min Grad: -0.06533423811197281
+[31mEpoch 3, Step 1500, Loss: 0.9385667774677277, F1: 0.20525619205960194[0m
+100%|███████████████████████| 64/64 [01:20<00:00,  1.25s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7558280229568481, Validation F1: 0.3668946623802185[0m
+
+Mean Grad: -1.0581852194491148e-07, Max Grad: 0.015657370910048485, Min Grad: -0.05370872840285301
+[31mEpoch 4, Step 2000, Loss: 0.9386204115152359, F1: 0.20609465968301902[0m
+100%|███████████████████████| 64/64 [01:19<00:00,  1.24s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7473533749580383, Validation F1: 0.37738722562789917[0m
+
+Mean Grad: 4.7394433266845226e-08, Max Grad: 0.07348676025867462, Min Grad: -0.024914944544434547
+[31mEpoch 5, Step 2500, Loss: 0.9395802187919616, F1: 0.20141180738035683[0m
+100%|███████████████████████| 64/64 [01:18<00:00,  1.23s/it]
+Train pred Range: 0.0, 0.9999985694885254
+[32mValidation Loss: 0.7503261566162109, Validation F1: 0.3802461624145508[0m
+
+Mean Grad: -1.787823222798579e-08, Max Grad: 0.01934235170483589, Min Grad: -0.026681017130613327
+[31mEpoch 6, Step 3000, Loss: 0.9405022280216218, F1: 0.19871763031056913[0m
+100%|███████████████████████| 64/64 [01:15<00:00,  1.18s/it]
+Train pred Range: 0.0, 0.9999902248382568
+[32mValidation Loss: 0.7345681190490723, Validation F1: 0.39834901690483093[0m
+
+Mean Grad: 5.644587020015024e-08, Max Grad: 0.08979977667331696, Min Grad: -0.019740188494324684
+[31mEpoch 7, Step 3500, Loss: 0.9397999716997146, F1: 0.2010822467023342[0m
+100%|███████████████████████| 64/64 [01:20<00:00,  1.26s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7429677844047546, Validation F1: 0.3826851546764374[0m
+
+Mean Grad: -5.697866711784627e-08, Max Grad: 0.041829682886600494, Min Grad: -0.023201823234558105
+[31mEpoch 8, Step 4000, Loss: 0.9373392260074616, F1: 0.20721151549316505[0m
+100%|███████████████████████| 64/64 [01:19<00:00,  1.24s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7228264808654785, Validation F1: 0.4142407476902008[0m
+
+Mean Grad: 5.3753517192944855e-09, Max Grad: 0.05685700848698616, Min Grad: -0.03156288340687752
+[31mEpoch 9, Step 4500, Loss: 0.9380295377969742, F1: 0.20611618462156764[0m
+ 54%|████████       | 4718/8812 [3:18:45<2:52:28,  2.53s/it]
+Train pred Range: 0.0, 1.0
+[32mValidation Loss: 0.7513654232025146, Validation F1: 0.37447771430015564[0m
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 108, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 44, in train_step
+    def train_step(self, X_student, X_teacher, Y,ROI):
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/home/wg25r/remeow/DinoMeow/main.py", line 93, in <module>
+    trainer.train()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 163, in train
+    self.train_epoch()
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 108, in train_epoch
+    train_pred = self.train_step(X_student, X_teacher, Y, ROI)
+  File "/home/wg25r/remeow/DinoMeow/trainer.py", line 44, in train_step
+    def train_step(self, X_student, X_teacher, Y,ROI):
+KeyboardInterrupt
