@@ -79,7 +79,10 @@ class CustomDataset(Dataset):
         
         return in_image, long_image, short_image, gt_image, roi_image, histgram
     
-    
+    def fake_shadow(self, img):
+        shifted_imgs = torchvision.transforms.functional.affine(img, angle=0, translate=(random.uniform(0, 20), random.uniform(0, 20)), scale=1, shear = random.uniform(-45,45))
+        img = 0.8 * img + 0.2 * shifted_imgs.mean(0, keepdim=True)
+        return img
     
     def __len__(self):
         return len(self.image_names)
@@ -157,20 +160,25 @@ class CustomDataset(Dataset):
         long_image = image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         short_image = image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
-            in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
-            assert in_image_.shape == in_images.shape
-            assert long_image_.shape == long_image.shape
-            assert short_image_.shape == short_image.shape
-            assert gt_image_.shape == gt_image.shape
-            assert roi_image_.shape == roi_image.shape
-            assert histgram_.shape == histgram.shape
-            in_images = in_image_
-            long_image = long_image_
-            short_image = short_image_
-            gt_image = gt_image_
-            roi_image = roi_image_
-            histgram = histgram_
-            
+            if random.random() > 0.5:
+                in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+                assert in_image_.shape == in_images.shape
+                assert long_image_.shape == long_image.shape
+                assert short_image_.shape == short_image.shape
+                assert gt_image_.shape == gt_image.shape
+                assert roi_image_.shape == roi_image.shape
+                assert histgram_.shape == histgram.shape
+                in_images = in_image_
+                long_image = long_image_
+                short_image = short_image_
+                gt_image = gt_image_
+                roi_image = roi_image_
+                histgram = histgram_
+            if random.random() > 0.8:
+                in_images = self.fake_shadow(in_images)
+                long_image = self.fake_shadow(long_image)
+                short_image = self.fake_shadow(short_image)
+                
         X = torch.cat([in_images, long_image, short_image], dim=0)
         if self.mode == "train": 
             if random.random() > 0.7:
@@ -199,7 +207,7 @@ class CustomDataset(Dataset):
                 histgram = torchvision.transforms.functional.rotate(histgram, angle)
 
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
-        X = torch.cat([X, histgram_], dim=0) 
+        X = torch.cat([X, histgram], dim=0) 
         Y = (Y > 0.95).float()
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
 
@@ -223,5 +231,11 @@ if __name__ == "__main__":
     argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2'
     args = parser.parse_args(shlex.split(argString))
     X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[0]
-    cv2.imwrite("test.jpg", X[:3].numpy().transpose(1, 2, 0) * 255)
+    std = torch.tensor([0.5, 0.5, 0.5])
+    mean = torch.tensor([0.5, 0.5, 0.5])
+    X = X[:3]
+    # denorm
+    X = X * std[:, None, None]
+    X = X + mean[:, None, None]
+    cv2.imwrite("test.jpg", X.numpy().transpose(1, 2, 0) * 255)
     print(X.shape, Y.shape, ROI.shape)
