@@ -40,21 +40,22 @@ class Trainer:
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
         # with torch.autocast(device_type='cuda', dtype=torch.float16):
         if gradient_accumulation:
-            for i in range(X.shape[0]//batch_size):
-                start = i * batch_size
-                end = start + batch_size
-                pred = self.model(X[start:end]) 
-                loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
-                # self.scaler.scale(loss).backward()
-                loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
-            self.optimizer.step()
-            e = 1e-6
-            # pred = torch.sigmoid(pred)
-            pred_ = pred[:,-1][ROI[-batch_size:] > 0.9] > 0.5
-            pred_ = pred_.float()
-            Y = Y[-batch_size:][ROI[-batch_size:] > 0.9] > 0.5
-            Y = Y.float()
+            # for i in range(X.shape[0]//batch_size):
+            #     start = i * batch_size
+            #     end = start + batch_size
+            #     pred = self.model(X[start:end]) 
+            #     loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
+            #     # self.scaler.scale(loss).backward()
+            #     loss.backward()
+            # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
+            # self.optimizer.step()
+            # e = 1e-6
+            # # pred = torch.sigmoid(pred)
+            # pred_ = pred[:,-1][ROI[-batch_size:] > 0.9] > 0.5
+            # pred_ = pred_.float()
+            # Y = Y[-batch_size:][ROI[-batch_size:] > 0.9] > 0.5
+            # Y = Y.float()
+            raise NotImplementedError    
         else:
             # print("outside ", X.shape)
             # print("houbeiyangkun" * 10)
@@ -71,13 +72,7 @@ class Trainer:
             pred_ = pred_.float()
             Y = Y[ROI > 0.9] > 0.5
             Y = Y.float()
-            
 
-        # self.scaler.unscale_(self.optimizer)
-        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-        
-        # self.scaler.step(self.optimizer)
-        # self.scaler.update()
 
         f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
         
