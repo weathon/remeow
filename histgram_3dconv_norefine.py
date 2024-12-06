@@ -7,16 +7,27 @@ conv3d = True
 
 def get_backbone(n, dropout=0.1):
     n = int(n)
-    in_dim = [32, 64, 64, 64, 64][n]
-    out_dim = [256, 256, 768, 768, 768][n]
-    config = SegformerConfig.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
-    config.attention_probs_dropout_prob = dropout
-    config.hidden_dropout_prob = dropout
-    backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
-    backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + 32 if conv3d else 12 + 32, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-    backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
-    return backbone
-
+    if n != 5:
+        in_dim = [32, 64, 64, 64, 64][n]
+        out_dim = [256, 256, 768, 768, 768][n]
+        config = SegformerConfig.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
+        config.attention_probs_dropout_prob = dropout
+        config.hidden_dropout_prob = dropout
+        backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + 32 if conv3d else 12 + 32, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
+        return backbone
+    else:
+        in_dim = 64
+        out_dim = 768
+        config = SegformerConfig.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640")
+        config.attention_probs_dropout_prob = dropout
+        config.hidden_dropout_prob = dropout
+        backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640", config=config)
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + 32 if conv3d else 12 + 32, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
+        return backbone
+    
 class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
@@ -45,7 +56,7 @@ class MyModel(nn.Module):
         self.t_dim = nn.Linear(8, 1)
         if self.args.mask_upsample == "interpolate":
             self.upsample = torch.nn.Sequential(
-                torch.nn.Upsample(size=(512, 512), mode="bilinear"),
+                torch.nn.Upsample(size=(self.args.image_size, self.args.image_size), mode="bilinear"),
                 torch.nn.Conv2d(64, 32, 3, padding="same"),
                 torch.nn.ReLU()
             )
@@ -57,7 +68,7 @@ class MyModel(nn.Module):
                 nn.ReLU(),
                 nn.ConvTranspose2d(32, 32, 3, 2),
                 nn.ReLU(),
-                torch.nn.Upsample(size=(512, 512))
+                torch.nn.Upsample(size=(self.args.image_size, self.args.image_size))
             )    
         else:
             self.upsample = torch.nn.Sequential(
@@ -95,7 +106,7 @@ class MyModel(nn.Module):
     def forward(self, X): 
         # print("inside ", X.shape) 
         X, hist = X[:,:30], X[:,30:]
-        # hist = hist.reshape(-1, 51, 3, 512, 512).permute(0, 2, 1, 3, 4)
+        # hist = hist.reshape(-1, 51, 3, self.args.image_size, self.args.image_size).permute(0, 2, 1, 3, 4)
         hist = hist/(hist.sum(dim=1, keepdim=True) + 1e-6)
         if self.training:
             hist = hist + torch.randn_like(hist) * hist.std() * 0.05 
@@ -108,18 +119,18 @@ class MyModel(nn.Module):
         hist = torch.cat([hist, current], dim=1)
         hist_features = self.hist_encoder(hist)
         # print("a" * 100)
-        hist_features = torch.nn.functional.interpolate(hist_features, size=(512, 512), mode="nearest")
+        hist_features = torch.nn.functional.interpolate(hist_features, size=(self.args.image_size, self.args.image_size), mode="nearest")
         # print(hist_features.shape) 
         # print("b" * 100)
-        assert frames.shape[1:] == (8 if conv3d else 3, 8, 512, 512), frames.shape
+        assert frames.shape[1:] == (8 if conv3d else 3, 8, self.args.image_size, self.args.image_size), frames.shape
         frames = frames.permute(0, 1, 3, 4, 2)
-        assert frames.shape[1:] == (8 if conv3d else 3, 512, 512, 8)
+        assert frames.shape[1:] == (8 if conv3d else 3, self.args.image_size, self.args.image_size, 8)
         frames = self.t_dim(frames).squeeze(-1)
-        assert frames.shape[1:] == (8 if conv3d else 3, 512, 512)
+        assert frames.shape[1:] == (8 if conv3d else 3, self.args.image_size, self.args.image_size)
         X = torch.cat([frames, short, long, current], dim=1)
-        assert X.shape[1:] == (17 if conv3d else 12, 512, 512)
+        assert X.shape[1:] == (17 if conv3d else 12, self.args.image_size, self.args.image_size)
         X = torch.cat([X, hist_features], dim=1)
-        assert X.shape[1:] == (17 + 32 if conv3d else 12 + 32, 512, 512)
+        assert X.shape[1:] == (17 + 32 if conv3d else 12 + 32, self.args.image_size, self.args.image_size)
         # print("c" * 100)
         X = self.backbone(X).logits 
         # print("d" * 100)
@@ -177,7 +188,7 @@ if __name__ == "__main__":
     from video_histgram_dataloader import CustomDataset
     import torch
     # X, Y, ROI = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "train")[0]
-    # X = torch.randn(9, 183, 512, 512).cuda()
+    # X = torch.randn(9, 183, self.args.image_size, self.args.image_size).cuda()
     dataloader = torch.utils.data.DataLoader(CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "train"), batch_size=9, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True)
     # model.train()
     # optimizer.zero_grad()

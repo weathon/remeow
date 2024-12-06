@@ -44,14 +44,21 @@ parser.add_argument('--learning_rate', type=float, default=1e-5, help='Learning 
 parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight decay')
 parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
 parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
-parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
+parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4", "5"])
 parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
 parser.add_argument('--background_type', type=str, default="mog2", choices=["mog2", "sub"], help='Background type, mog2 means MOG2, sub means SuBSENSE')
 parser.add_argument('--histogram', action="store_true", help='If use histogram')
 parser.add_argument('--clip', type=float, default=1, help='Gradient clip norm')
 parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
 parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
+parser.add_argument('--image_size', type=int, default=512, help="Image size", choices=[512, 640])
 args = parser.parse_args()
+
+if args.image_size == 512:
+    assert args.backbone in ["0", "1", "2", "3", "4"], "Backbone size should be 0, 1, 2, 3, 4 when image size is 512"
+elif args.image_size == 640:
+    assert args.backbone == "5", "Backbone size should be 5 when image size is 640"
+    
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
 if args.histogram:

@@ -8,7 +8,6 @@ import random
 import torchvision
 from transformers import AutoImageProcessor
 IMG_SIZE = 512
-image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
 
 # cache = {} 
 
@@ -25,7 +24,12 @@ class CustomDataset(Dataset):
         self.args = args
         self.fold = fold
         self.mode = mode
-
+        if args.image_size == 512:
+            self.image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b1-finetuned-ade-512-512")
+        else:
+            self.image_processor = AutoImageProcessor.from_pretrained("nvidia/segformer-b5-finetuned-ade-640-640")
+            global IMG_SIZE
+            IMG_SIZE = 640
         txt_file = os.path.join(val_path, f'{mode}_{fold}.txt')
         with open(txt_file, 'r') as f:
             image_names = sorted(f.read().split("\n"))
@@ -148,17 +152,17 @@ class CustomDataset(Dataset):
             in_image_path = os.path.join(self.data_path, 'in', "_".join(image_name.split("_")[:-1] + [f"in{image_id}.jpg"]))
             in_image = np.array(Image.open(in_image_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
             in_image = self.transform(in_image)
-            in_image = image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+            in_image = self.image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
             in_images.append(in_image)
             
         histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
         histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
-        histgram = torch.nn.functional.interpolate(histgram, size=(512, 512), mode="nearest")
+        histgram = torch.nn.functional.interpolate(histgram, size=(IMG_SIZE, IMG_SIZE), mode="nearest")
         histgram = histgram.flatten(0, 1)
         
         in_images = torch.cat(in_images, dim=0)
-        long_image = image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
-        short_image = image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+        long_image = self.image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+        short_image = self.image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
             if random.random() > 0.5:
                 in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
