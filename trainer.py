@@ -11,8 +11,9 @@ gradient_accumulation = False
 REFINE = True
 from sklearn.metrics import f1_score
 class Trainer:
-    def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args):
+    def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args, regularization_loss):
         self.model = model
+        self.model_0 = model.backbone.parameters()
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self.train_dataloader = train_dataloader
@@ -24,6 +25,7 @@ class Trainer:
         self.step = 0
         self.validate_f1 = False
         self.args = args
+        self.regularization_loss = regularization_loss
         # self.scaler = torch.GradScaler()
 
     def getgrad(self):
@@ -61,7 +63,7 @@ class Trainer:
             # print("houbeiyangkun" * 10)
             pred = self.model(X.to("cuda:0")) 
             # print(pred.shape)
-            loss = self.loss_fn(pred, Y, ROI)
+            loss = self.loss_fn(pred, Y, ROI) + self.regularization_loss(self.model_0, self.model.backbone.parameters())
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
             self.optimizer.step()

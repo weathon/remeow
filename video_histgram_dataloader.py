@@ -13,9 +13,14 @@ IMG_SIZE = 512
 
 # for i in os.listdir("/home/wg25r/fastdata/CDNet/hist"):
 #     path = os.path.join("/home/wg25r/fastdata/CDNet", 'hist', i)
-#     print(path)
+#     print_(path)
 #     histgram = torch.load(path, weights_only=False, map_location='cpu')
 #     cache[i.replace(".pt", "")] = histgram
+
+if __name__ == "__main__":
+    print_ = print
+else:
+    print_ = lambda x: None
     
 class CustomDataset(Dataset):
     def __init__(self, train_path, val_path, args, mode='train'):
@@ -121,6 +126,7 @@ class CustomDataset(Dataset):
     
     def __getitem__(self, idx):
         image_name = self.image_names[idx]
+        print_(image_name)
         video_name = "_".join(image_name.split("_")[:-1])
         
         long_path = os.path.join(self.data_path, 'long' if self.args.background_type == "mog2" else "sub_long", image_name)
@@ -135,15 +141,20 @@ class CustomDataset(Dataset):
         long_image, short_image, gt_image, roi_image = self.transform(long_image, short_image, gt_image, roi_image)
         if self.mode == 'train':
             if random.random() > 0.9:
+                print_("Hit 1")
                 long_image = self.strong_pan(long_image)
                 short_image = self.weak_pan(short_image) 
             if random.random() > 0.9:
+                print_("Hit -1")
                 long_image = long_image + long_image * (torch.rand(1) * 0.5 - 0.25)
             if random.random() > 0.9:
+                print_("Hit -2")
                 short_image = short_image + short_image * (torch.rand(1) * 0.5 - 0.25)
             if random.random() > 0.7:
+                print_("Hit -3")
                 short_image = self.bg_trans(short_image)
             if random.random() > 0.7:
+                print_("Hit -4")
                 long_image = self.bg_trans(long_image)
         in_images = []
         for i in range(0,80,10):
@@ -197,13 +208,16 @@ class CustomDataset(Dataset):
         ROI[0,1]=0
         if self.mode == 'train':
             if random.random() > 0.8: 
+                print_("Hit 2")
                 X = self.noise(X)
             if random.random() > 0.5:
                 # flip
+                print_("Hit 3")
                 X = torchvision.transforms.functional.hflip(X)
                 Y = torchvision.transforms.functional.hflip(Y)
                 ROI = torchvision.transforms.functional.hflip(ROI)
             if random.random() > 0.5:
+                print_("Hit 4")
                 angle = random.randint(-90, 90)
                 X = torchvision.transforms.functional.rotate(X, angle)
                 Y = torchvision.transforms.functional.rotate(Y, angle)
@@ -211,8 +225,13 @@ class CustomDataset(Dataset):
                 histgram = torchvision.transforms.functional.rotate(histgram, angle)
 
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
-        X = torch.cat([X, histgram], dim=0) 
+        if self.args.histogram:
+            X = torch.cat([X, histgram], dim=0) 
+        hard_shadow = self.close(Y, 50/255)
         Y = (Y > 0.95).float()
+        # if self.args.hard_shadow:
+        #     print_("Hit 5")
+        #     Y[hard_shadow] = -0.3
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
 
 
@@ -232,6 +251,14 @@ if __name__ == "__main__":
     parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
     parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
     parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
+    parser.add_argument('--image_size', type=str, default="512", help="Image size", choices=["512", "640"])
+    parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
+    parser.add_argument('--histogram', action="store_true", help='If use histogram')
+    parser.add_argument('--clip', type=float, default=1, help='Gradient clip norm')
+    parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
+    parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
+    parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
+    
     argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2'
     args = parser.parse_args(shlex.split(argString))
     X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[0]
@@ -241,5 +268,9 @@ if __name__ == "__main__":
     # denorm
     X = X * std[:, None, None]
     X = X + mean[:, None, None]
-    cv2.imwrite("test.jpg", X.numpy().transpose(1, 2, 0) * 255)
-    print(X.shape, Y.shape, ROI.shape)
+    cv2.imwrite("test.png", X.numpy().transpose(1, 2, 0) * 255)
+    print_(Y.shape)
+    Y = Y.numpy()
+    # Y = (Y - Y.min()) / (Y.max() - Y.min())
+    cv2.imwrite("test_gt.png", Y * 255)
+    print_(X.shape, Y.shape, ROI.shape)

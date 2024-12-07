@@ -5,7 +5,7 @@ from transformers import SegformerForSemanticSegmentation
 
 conv3d = True
 
-def get_backbone(n, dropout=0.1):
+def get_backbone(n, dropout=0.1, hist_dim = 32):
     n = int(n)
     if n != 5:
         in_dim = [32, 64, 64, 64, 64][n]
@@ -14,7 +14,7 @@ def get_backbone(n, dropout=0.1):
         config.attention_probs_dropout_prob = dropout
         config.hidden_dropout_prob = dropout
         backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + 32 if conv3d else 12 + 32, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + hist_dim if conv3d else 12 + hist_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
         return backbone
     else:
@@ -24,7 +24,7 @@ def get_backbone(n, dropout=0.1):
         config.attention_probs_dropout_prob = dropout
         config.hidden_dropout_prob = dropout
         backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + 32 if conv3d else 12 + 32, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + hist_dim if conv3d else 12 + hist_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
         return backbone
     
@@ -32,7 +32,7 @@ class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
         self.args = args 
-        self.backbone = get_backbone(args.backbone, 0.1)
+        self.backbone = get_backbone(args.backbone, 0.1, hist_dim=32 if args.histogram else 0)
         self.head = torch.nn.Sequential(
             nn.Conv2d(32, 16, 3, padding="same"),
             nn.Dropout2d(0.15),
@@ -107,19 +107,20 @@ class MyModel(nn.Module):
         # print("inside ", X.shape) 
         X, hist = X[:,:30], X[:,30:]
         # hist = hist.reshape(-1, 51, 3, self.args.image_size, self.args.image_size).permute(0, 2, 1, 3, 4)
-        hist = hist/(hist.sum(dim=1, keepdim=True) + 1e-6)
-        if self.training:
-            hist = hist + torch.randn_like(hist) * hist.std() * 0.05 
+        if self.args.histogram:
+            hist = hist/(hist.sum(dim=1, keepdim=True) + 1e-6)
+            if self.training:
+                hist = hist + torch.randn_like(hist) * hist.std() * 0.05 
         # print(hist_features.shape)
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]        
         current = frames[:, :3]
         frames = torch.stack(torch.split(frames, 3, dim=1), dim=2)
         frames = self.conv3d(frames)
-        
-        hist = torch.cat([hist, current], dim=1)
-        hist_features = self.hist_encoder(hist)
-        # print("a" * 100)
-        hist_features = torch.nn.functional.interpolate(hist_features, size=(self.args.image_size, self.args.image_size), mode="nearest")
+        if self.args.histogram:
+            hist = torch.cat([hist, current], dim=1)
+            hist_features = self.hist_encoder(hist)
+            # print("a" * 100)
+            hist_features = torch.nn.functional.interpolate(hist_features, size=(self.args.image_size, self.args.image_size), mode="nearest")
         # print(hist_features.shape) 
         # print("b" * 100)
         assert frames.shape[1:] == (8 if conv3d else 3, 8, self.args.image_size, self.args.image_size), frames.shape
@@ -129,8 +130,10 @@ class MyModel(nn.Module):
         assert frames.shape[1:] == (8 if conv3d else 3, self.args.image_size, self.args.image_size)
         X = torch.cat([frames, short, long, current], dim=1)
         assert X.shape[1:] == (17 if conv3d else 12, self.args.image_size, self.args.image_size)
-        X = torch.cat([X, hist_features], dim=1)
-        assert X.shape[1:] == (17 + 32 if conv3d else 12 + 32, self.args.image_size, self.args.image_size)
+        if self.args.histogram:
+            X = torch.cat([X, hist_features], dim=1)
+        
+        # assert X.shape[1:] == (17 + 32 if conv3d else 12 + 32, self.args.image_size, self.args.image_size)
         # print("c" * 100)
         X = self.backbone(X).logits 
         # print("d" * 100)

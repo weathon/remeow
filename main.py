@@ -52,6 +52,8 @@ parser.add_argument('--clip', type=float, default=1, help='Gradient clip norm')
 parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
 parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
 parser.add_argument('--image_size', type=int, default=512, help="Image size", choices=[512, 640])
+parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
+
 args = parser.parse_args()
 
 if args.image_size == 512:
@@ -61,12 +63,8 @@ elif args.image_size == 640:
     
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
-if args.histogram:
-    from histgram_3dconv_norefine import MyModel
-    from video_histgram_dataloader import CustomDataset
-else:
-    from conv3d_with_refine import MyModel
-    from video_dataloader import CustomDataset
+from histgram_3dconv_norefine import MyModel
+from video_histgram_dataloader import CustomDataset
 
 
 
@@ -74,16 +72,17 @@ model = MyModel(args)
 # model = ISNetBackbone(args) 
 model = torch.nn.DataParallel(model).cuda() #should be here before optimizer, that was why no converge and error
 # head conv3d t_dim upsample hist_encoder
-optimizer = torch.optim.AdamW(
-    [
-        {'params': model.module.head.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-        {'params': model.module.conv3d.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-        {'params': model.module.t_dim.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-        {'params': model.module.upsample.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-        {'params': model.module.hist_encoder.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-        {'params': model.module.backbone.parameters(), 'lr': args.learning_rate * 0.2, "weight_decay": args.weight_decay * 0.2},
-    ]
-    , lr=args.learning_rate, weight_decay=args.weight_decay)
+# optimizer = torch.optim.AdamW(
+#     [
+#         {'params': model.module.head.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+#         {'params': model.module.conv3d.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+#         {'params': model.module.t_dim.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+#         {'params': model.module.upsample.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+#         {'params': model.module.hist_encoder.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+#         {'params': model.module.backbone.parameters(), 'lr': args.learning_rate * 0.2, "weight_decay": args.weight_decay * 0.2},
+#     ]
+#     , lr=args.learning_rate, weight_decay=args.weight_decay)
+optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps) 
 # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
