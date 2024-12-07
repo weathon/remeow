@@ -53,6 +53,7 @@ parser.add_argument('--note', type=str, default="", help='Note for this run (for
 parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
 parser.add_argument('--image_size', type=int, default=512, help="Image size", choices=[512, 640])
 parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
+parser.add_argument('--lambda2', type=float, default=30, help='Lambda2 for pretrained weights and new weights')
 
 args = parser.parse_args()
 
@@ -117,7 +118,14 @@ def iou_loss(pred, target, ROI):
     return total_loss
 
 
-
+def regularization_loss(model_0, model_t):
+    total_loss = 0
+    count = 0
+    for param_0, param_t in zip(model_0, model_t):
+        total_loss += (param_0 - param_t).abs().mean()
+        count += 1
+        
+    return total_loss / count
     
 loss_fn = iou_loss
 
@@ -126,7 +134,7 @@ wandb.define_metric("pstep")
 logger = wandb
 # model = model.cuda()
 # model.load_state_dict(torch.load("model.pth"))
-trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args)
+trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args, regularization_loss)
 
 
 # %%

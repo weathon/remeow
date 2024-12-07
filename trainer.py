@@ -6,6 +6,7 @@ def printred(text):
 
 def printgreen(text):
     print(f"\033[32m{text}\033[0m")
+import copy
 batch_size = 8
 gradient_accumulation = False
 REFINE = True
@@ -13,7 +14,7 @@ from sklearn.metrics import f1_score
 class Trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args, regularization_loss):
         self.model = model
-        self.model_0 = model.backbone.parameters()
+        self.model_0 = copy.deepcopy(list(model.module.backbone.parameters()))
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
         self.train_dataloader = train_dataloader
@@ -22,6 +23,7 @@ class Trainer:
         self.loss_fn = loss_fn
         self.running_loss = []
         self.running_f1 = []
+        self.runing_reg_loss = []
         self.step = 0
         self.validate_f1 = False
         self.args = args
@@ -63,7 +65,9 @@ class Trainer:
             # print("houbeiyangkun" * 10)
             pred = self.model(X.to("cuda:0")) 
             # print(pred.shape)
-            loss = self.loss_fn(pred, Y, ROI) + self.regularization_loss(self.model_0, self.model.backbone.parameters())
+            loss = self.loss_fn(pred, Y, ROI)
+            reg_loss = self.regularization_loss(self.model_0, self.model.module.backbone.parameters())
+            loss = loss + reg_loss
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
             self.optimizer.step()
@@ -80,6 +84,7 @@ class Trainer:
         
         self.running_loss += [loss.item()]
         self.running_f1 += [f1.item()]
+        self.runing_reg_loss += [reg_loss.item()]
         return pred[:,-1].float()
 
     def validate(self, X, Y, ROI): 
@@ -127,7 +132,7 @@ class Trainer:
                 weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.02
                 for param_group in self.optimizer.param_groups:
                     param_group['weight_decay'] = weight_decay
-                self.logger.log({"pstep":self.step,"loss": np.mean(self.running_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
+                self.logger.log({"pstep":self.step, "loss": np.mean(self.running_loss), "reg_loss": np.mean(self.runing_reg_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 printred(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
                 for val_i, (val_X, val_Y, val_ROI) in enumerate(tqdm.tqdm(self.val_dataloader, ncols=60)):
@@ -161,6 +166,7 @@ class Trainer:
 
                 self.running_loss = []
                 self.running_f1 = []
+                self.runing_reg_loss = []
                 # self.lr_scheduler.step(val_running_f1 / len(self.val_dataloader))
                 self.step += 1
                 if self.step >= 1000:
