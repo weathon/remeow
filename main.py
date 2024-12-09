@@ -122,8 +122,8 @@ def regularization_loss(model_0, model_t):
     total_loss = 0
     count = 0
     for param_0, param_t in zip(model_0, model_t):
-        total_loss += (param_0 - param_t).abs().mean()
-        count += 1
+        total_loss += (param_0 - param_t).abs().sum()
+        count += param_0.size()
         
     return total_loss / count
     
