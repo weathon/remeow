@@ -67,7 +67,7 @@ class Trainer:
             # print(pred.shape)
             loss = self.loss_fn(pred, Y, ROI)
             reg_loss = self.regularization_loss(self.model_0, self.model.module.backbone.parameters())
-            loss = loss + reg_loss
+            loss = loss + reg_loss * self.args.lambda2
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
             self.optimizer.step()
@@ -123,7 +123,7 @@ class Trainer:
             if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
-            if train_i % 500 == 0:
+            if train_i % 1000 == 0:
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")

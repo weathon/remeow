@@ -54,6 +54,7 @@ parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence pe
 parser.add_argument('--image_size', type=int, default=512, help="Image size", choices=[512, 640])
 parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
 parser.add_argument('--lambda2', type=float, default=30, help='Lambda2 for pretrained weights and new weights')
+parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning rate')
 
 args = parser.parse_args()
 
@@ -85,7 +86,7 @@ model = torch.nn.DataParallel(model).cuda() #should be here before optimizer, th
 #     , lr=args.learning_rate, weight_decay=args.weight_decay)
 optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
-lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps) 
+lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps, eta_min=args.lr_min)
 # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 
 # train_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "train")
 # val_dataset = CustomDataset("/home/wg25r/preaug_cdnet/", "/home/wg25r/CDNet", 4, "val")
@@ -123,7 +124,7 @@ def regularization_loss(model_0, model_t):
     count = 0
     for param_0, param_t in zip(model_0, model_t):
         total_loss += (param_0 - param_t).abs().sum()
-        count += param_0.size()
+        count += param_0.size()[0]
         
     return total_loss / count
     

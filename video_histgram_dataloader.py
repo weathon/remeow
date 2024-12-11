@@ -59,7 +59,7 @@ class CustomDataset(Dataset):
             ])
         else:
             random.seed(19890604)
-            self.image_names = sorted(random.sample(image_names, min(2048, len(image_names))))
+            self.image_names = sorted(random.sample(image_names, min(8192, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
