@@ -68,8 +68,8 @@ class CustomDataset(Dataset):
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
         self.random_resized_crop = transforms.RandomResizedCrop(IMG_SIZE, scale=(0.25, 1.5), ratio=(0.5, 1.5))
 
-    def crop(self, in_image, long_image, short_image, gt_image, roi_image, histgram):
-        stacked = torch.cat([in_image, long_image, short_image, gt_image, roi_image, histgram], dim=0)
+    def crop(self, in_image, long_image, short_image, gt_image, roi_image, histgram, hard_shadow):
+        stacked = torch.cat([in_image, long_image, short_image, gt_image, roi_image, hard_shadow, histgram], dim=0) #nbozitaitongleyapoganhuxikunyunbozikunshouran histgram must be at teh end
         cropped = self.random_resized_crop(stacked)
         
         pointer0 = 0
@@ -78,15 +78,19 @@ class CustomDataset(Dataset):
         pointer3 = pointer2 + len(short_image)
         pointer4 = pointer3 + len(gt_image)
         pointer5 = pointer4 + len(roi_image)
+        pointer6 = pointer5 + len(hard_shadow)
+        pointer7 = pointer6 + len(histgram)
         
         in_image = cropped[pointer0:pointer1]
         long_image = cropped[pointer1:pointer2]
         short_image = cropped[pointer2:pointer3]
         gt_image = cropped[pointer3:pointer4]
         roi_image = cropped[pointer4:pointer5]
-        histgram = cropped[pointer5:] 
+        hard_shadow = cropped[pointer5:pointer6]
+        histgram = cropped[pointer6:pointer7]
         
-        return in_image, long_image, short_image, gt_image, roi_image, histgram
+        
+        return in_image, long_image, short_image, gt_image, roi_image, histgram, hard_shadow
     
     def fake_shadow(self, img):
         shifted_imgs = torchvision.transforms.functional.affine(img, angle=0, translate=(random.uniform(0, 20), random.uniform(0, 20)), scale=1, shear = random.uniform(-45,45))
@@ -120,7 +124,7 @@ class CustomDataset(Dataset):
 
         return torch.stack(shifteds).to(torch.float).mean(0)
     
-    def close(self, a, b, threshold=0.02 * 255):
+    def close(self, a, b, threshold=0.04 * 255):
         diff = np.abs(a - b) 
         return diff < threshold
     
@@ -137,8 +141,8 @@ class CustomDataset(Dataset):
         short_image = np.array(Image.open(short_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
         gt_image = np.array(Image.open(gt_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
         roi_image = ~self.close(gt_image.mean(-1), 85) * 255
-
-        long_image, short_image, gt_image, roi_image = self.transform(long_image, short_image, gt_image, roi_image)
+        hard_shadow = self.close(gt_image.mean(-1), 50)
+        long_image, short_image, gt_image, roi_image, hard_shadow = self.transform(long_image, short_image, gt_image, roi_image, hard_shadow)
         if self.mode == 'train':
             if random.random() > 0.9:
                 print_("Hit 1")
@@ -176,19 +180,21 @@ class CustomDataset(Dataset):
         short_image = self.image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
             if random.random() > 0.5:
-                in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+                in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_, hard_shadow_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram, hard_shadow)
                 assert in_image_.shape == in_images.shape
                 assert long_image_.shape == long_image.shape
                 assert short_image_.shape == short_image.shape
                 assert gt_image_.shape == gt_image.shape
                 assert roi_image_.shape == roi_image.shape
                 assert histgram_.shape == histgram.shape
+                assert hard_shadow_.shape == hard_shadow.shape
                 in_images = in_image_
                 long_image = long_image_
                 short_image = short_image_
                 gt_image = gt_image_
                 roi_image = roi_image_
                 histgram = histgram_
+                hard_shadow = hard_shadow_
             # if random.random() > 0.8:
             #     in_images = self.fake_shadow(in_images)
             #     long_image = self.fake_shadow(long_image)
@@ -200,6 +206,7 @@ class CustomDataset(Dataset):
                 X = X + X * (torch.rand(X.shape[0])[:,None,None] * 0.5 - 0.25)
                 
         ROI = transforms.functional.resize(roi_image, (IMG_SIZE, IMG_SIZE))
+        hard_shadow = transforms.functional.resize(hard_shadow, (IMG_SIZE, IMG_SIZE))
         Y = gt_image
         Y = transforms.functional.resize(Y, (IMG_SIZE, IMG_SIZE))
         Y = Y/255
@@ -216,6 +223,7 @@ class CustomDataset(Dataset):
                 X = torchvision.transforms.functional.hflip(X)
                 Y = torchvision.transforms.functional.hflip(Y)
                 ROI = torchvision.transforms.functional.hflip(ROI)
+                hard_shadow = torchvision.transforms.functional.hflip(hard_shadow)
             if random.random() > 0.5:
                 print_("Hit 4")
                 angle = random.randint(-90, 90)
@@ -223,15 +231,17 @@ class CustomDataset(Dataset):
                 Y = torchvision.transforms.functional.rotate(Y, angle)
                 ROI = torchvision.transforms.functional.rotate(ROI, angle)
                 histgram = torchvision.transforms.functional.rotate(histgram, angle)
+                hard_shadow = torchvision.transforms.functional.rotate(hard_shadow, angle)
 
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
         if self.args.histogram:
             X = torch.cat([X, histgram], dim=0) 
-        hard_shadow = self.close(Y, 50/255, threshold=0.02)
+        # hard_shadow = self.close(Y, 50/255, threshold=0.02)
         Y = (Y > 0.95).float()
         if self.args.hard_shadow:
             print_("Hit 5")
-            Y[hard_shadow] = 2
+            print_((hard_shadow.shape, Y.shape))
+            Y[hard_shadow.repeat(3, 1, 1)>0.5] = 2
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
 
 
