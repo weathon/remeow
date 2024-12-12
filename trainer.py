@@ -74,6 +74,7 @@ class Trainer:
             e = 1e-6
             # pred = torch.sigmoid(pred)
             pred = pred.argmax(dim=1)
+            
             pred_ = (pred==1)[ROI > 0.9]
             if self.args.hard_shadow:
                 pred = torch.where(ROI > 0.9, pred, 0)
