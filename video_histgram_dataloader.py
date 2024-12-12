@@ -209,7 +209,7 @@ class CustomDataset(Dataset):
         if self.mode == 'train':
             if random.random() > 0.8: 
                 print_("Hit 2")
-                X = self.noise(X)
+                X = self.noise(X)  
             if random.random() > 0.5:
                 # flip
                 print_("Hit 3")

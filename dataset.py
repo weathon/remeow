@@ -5,6 +5,7 @@ import time
 from dotenv import load_dotenv
 load_dotenv()
 
+import requests
 
 # delete the existing files
 import shutil
@@ -19,7 +20,80 @@ client = LumaAI(
 )
 
 # video_path = "smokes/" + os.listdir("smokes")[0]
-for video_path in os.listdir("smokes"):
+
+# os.makedirs("generated", exist_ok=True)
+# for i in range(20):
+#   generation = client.generations.create(
+#     prompt="from a black screen, steam or smoke coming to the screen",
+#     keyframes={
+#       "frame0": {
+#         "type": "image",
+#         "url": "https://upload.wikimedia.org/wikipedia/commons/4/49/A_black_image.jpg"
+#       }
+#     }
+#   )
+#   completed = False
+#   while not completed:
+#     generation = client.generations.get(id=generation.id)
+#     if generation.state == "completed":
+#       completed = True
+#     elif generation.state == "failed":
+#       raise RuntimeError(f"Generation failed: {generation.failure_reason}")
+#     print("Dreaming part 1")
+#     time.sleep(3)
+
+#   generation = client.generations.create(
+#       prompt="steam or smoke coming to the screen",
+#       keyframes={
+#         "frame0": {
+#           "type": "generation",
+#           "id": generation.id
+#         }
+#       }
+#   )
+#   completed = False
+#   while not completed:
+#     generation = client.generations.get(id=generation.id)
+#     if generation.state == "completed":
+#       completed = True
+#     elif generation.state == "failed":
+#       raise RuntimeError(f"Generation failed: {generation.failure_reason}")
+#     print("Dreaming part 2")
+#     time.sleep(3)
+    
+    
+#   generation = client.generations.create(
+#       prompt="steam or smoke coming to the screen",
+#       keyframes={
+#         "frame0": {
+#           "type": "generation",
+#           "id": generation.id
+#         }
+#       }
+#   )
+#   completed = False
+#   while not completed:
+#     generation = client.generations.get(id=generation.id)
+#     if generation.state == "completed":
+#       completed = True
+#     elif generation.state == "failed":
+#       raise RuntimeError(f"Generation failed: {generation.failure_reason}")
+#     print("Dreaming part 3")
+#     time.sleep(3)
+
+
+#   video_url = generation.assets.video
+
+
+#   response = requests.get(video_url, stream=True)
+#   with open(f'generated/{generation.id}.mp4', 'wb') as file:
+#       file.write(response.content)
+#   print(f"File downloaded as {generation.id}.mp4")
+
+
+video_index = 0
+for video_path in os.listdir("generated"):
+  video_index += 1
   import numpy as np
   from PIL import Image, ImageDraw, ImageFilter
 
@@ -43,7 +117,7 @@ for video_path in os.listdir("smokes"):
 
 
   generation = client.generations.image.create(
-    prompt="image of forest",
+    prompt="A dense forest with towering trees covered in vibrant green leaves, sunlight filtering through the canopy creating scattered light patterns on the forest floor, a soft mist hanging in the air, lush undergrowth with ferns and moss-covered rocks, and a serene, natural atmosphere.",
   )
   completed = False
   while not completed:
@@ -85,9 +159,9 @@ for video_path in os.listdir("smokes"):
     
     blended.append(background)
     
-  video = cv2.VideoCapture("smokes/"+video_path)
+  video = cv2.VideoCapture("generated/"+video_path)
   print(f"Processing {video_path}, with frame counts: {int(video.get(cv2.CAP_PROP_FRAME_COUNT))}")
-  size = random.randint(128, 256)
+  size = random.randint(128, 512)
   locx = random.randint(0, 512 - size)
   locy = random.randint(0, 512 - size) 
   while video.isOpened():
@@ -122,19 +196,20 @@ for video_path in os.listdir("smokes"):
     background = background.resize((512, 512))
     background = Image.fromarray((np.array(background) * random.uniform(0.95, 1)).astype("uint8"))
     mask = Image.fromarray(((np.array(relocated_mask) > (0)) * 255).astype("uint8"))
-    mask = mask.resize((512, 512))
+    mask = mask.crop((left, top, left + 500, top + 500)) 
+    mask = mask.resize((512, 512)) 
     masks.append(mask)
     blended.append(background)
 
 
-  video_writer = cv2.VideoWriter("in/"+video_path, cv2.VideoWriter_fourcc(*'mp4v'), 30, (512, 512))
+  video_writer = cv2.VideoWriter("in/"+str(video_index)+".mp4", cv2.VideoWriter_fourcc(*'mp4v'), 30, (512, 512))
   icount = 0
   for i in range(len(blended)):
     video_writer.write(np.array(blended[i])[:,:,None].repeat(3, axis=2))
     icount+=1
   video_writer.release()
 
-  video_writer = cv2.VideoWriter("gt/"+video_path, cv2.VideoWriter_fourcc(*'mp4v'), 30, (512, 512))
+  video_writer = cv2.VideoWriter("gt/"+str(video_index)+".mp4", cv2.VideoWriter_fourcc(*'mp4v'), 30, (512, 512))
   jcount = 0
   for i in range(len(blended)):
     video_writer.write(np.array(masks[i])[:,:,None].repeat(3, axis=2))
