@@ -57,6 +57,7 @@ parser.add_argument('--lambda2', type=float, default=30, help='Lambda2 for pretr
 parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning rate')
 parser.add_argument('--print_every', type=int, default=100, help='Print every n steps')
 parser.add_argument('--val_size', type=int, default=1024, help='Validation size')
+parser.add_argument('--lora', action="store_true", help='If use LoRA')
 
 args = parser.parse_args()
 

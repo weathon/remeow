@@ -11,8 +11,36 @@ batch_size = 8
 gradient_accumulation = False
 REFINE = True
 from sklearn.metrics import f1_score
+from peft import LoraConfig, TaskType
+from peft import get_peft_model
+
+
+def print_trainable_parameters(model):
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.2f}"
+    )
+    
+    
+
 class Trainer:
     def __init__(self, model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args, regularization_loss):
+        # if args.lora:
+        #     config = LoraConfig(
+        #         r=128,
+        #         lora_alpha=128,
+        #         lora_dropout=0.1,
+        #         target_modules=["query", "key", "value", "dense1", "dense2", "dwconv.dwconv"],
+        #         bias="none",
+        #     ) 
+        #     model = get_peft_model(model, config)
+        #     print_trainable_parameters(model) 
+        # lora should be only for the backbone
         self.model = model
         self.model_0 = copy.deepcopy(list(model.module.backbone.parameters()))
         self.optimizer = optimizer

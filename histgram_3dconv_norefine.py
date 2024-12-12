@@ -27,12 +27,34 @@ def get_backbone(n, dropout=0.1, hist_dim = 32):
         backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + hist_dim if conv3d else 12 + hist_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
         return backbone
+from peft import LoraConfig, TaskType
+from peft import get_peft_model
+def print_trainable_parameters(model):
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.2f}"
+    )
     
 class MyModel(nn.Module):
     def __init__(self, args):
         super(MyModel, self).__init__() 
         self.args = args 
         self.backbone = get_backbone(args.backbone, 0.1, hist_dim=32 if args.histogram else 0)
+        if args.lora:
+            config = LoraConfig(
+                r=128,
+                lora_alpha=128,
+                lora_dropout=0.1,
+                target_modules=["query", "key", "value", "dense1", "dense2", "dwconv.dwconv"],
+                bias="none",
+            ) 
+            self.backbone = get_peft_model(self.backbone, config)
+            print_trainable_parameters(self.backbone) 
         self.head = torch.nn.Sequential(
             nn.Conv2d(32, 16, 3, padding="same"),
             nn.Dropout2d(0.15),
