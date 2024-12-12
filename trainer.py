@@ -73,8 +73,13 @@ class Trainer:
             self.optimizer.step()
             e = 1e-6
             # pred = torch.sigmoid(pred)
-            pred_ = pred[:,-1][ROI > 0.9] > 0.5
-            pred = torch.where(ROI > 0.9, pred, 0)
+            pred = pred.argmax(dim=1)
+            pred_ = (pred==1)[ROI > 0.9]
+            if self.args.hard_shadow:
+                pred = torch.where(ROI > 0.9, pred, 0)
+                pred = pred / 2.0
+            else:
+                pred = torch.where(ROI > 0.9, pred, 0)
             pred_ = pred_.float()
             Y = Y[ROI > 0.9] > 0.5
             Y = Y.float()
@@ -85,7 +90,9 @@ class Trainer:
         self.running_loss += [loss.item()]
         self.running_f1 += [f1.item()]
         self.runing_reg_loss += [reg_loss.item()]
-        return pred[:,-1].float()
+        # print(pred.shape)
+        return pred.float()
+        # return pred[:,-1].float()
 
     def validate(self, X, Y, ROI): 
         self.model.eval()
@@ -95,20 +102,26 @@ class Trainer:
             e = 1e-6
             # pred = torch.sigmoid(pred)
             rough_pred = pred[:,0]
-            pred = pred[:,-1]
-            pred_ = pred[ROI > 0.9] > 0.5
-            pred = torch.where(ROI > 0.9, pred, 0) 
+            pred = pred.argmax(dim=1)
+            pred_ = (pred==1)[ROI > 0.9]
+            # print(pred_.shape, Y.shape)
+            if self.args.hard_shadow:
+                pred = torch.where(ROI > 0.9, pred, 0)
+                pred = pred / 2.0
+            else:
+                pred = torch.where(ROI > 0.9, pred, 0) 
             rough_pred = torch.where(ROI > 0.9, rough_pred, 0)
             pred_ = pred_.float()
             Y = Y[ROI > 0.9] > 0.5
             Y = Y.float()
+            # print(pred_.shape, Y.shape)
+            
             f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
             # if not self.validate_f1:
             #     sklearn_f1 = f1_score(Y.cpu().numpy(), pred_.cpu().numpy())
             #     if not np.isclose(f1.item(), sklearn_f1):
             #         print(f"\033[93m Mismatch {f1.item()}, {sklearn_f1}\033[0m")
             # self.validate_f1 = True
-
         return loss, f1, pred.float(), rough_pred
     
     
@@ -123,7 +136,7 @@ class Trainer:
             if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
-            if train_i % 1000 == 0:
+            if train_i % self.args.print_every == 0:
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
@@ -143,6 +156,7 @@ class Trainer:
                     val_running_f1 += val_f1
                 # print(ROI[0].max(), val_ROI[0].max())
                 print(f"Train pred Range: {train_pred.min()}, {train_pred.max()}")
+                print(Y[-batch_size].unsqueeze(0).shape, val_Y[0].unsqueeze(0).shape)
                 self.logger.log({
                                 "pstep":self.step,
                                 "weight_decay":self.optimizer.param_groups[0]["weight_decay"], 

@@ -59,7 +59,7 @@ class CustomDataset(Dataset):
             ])
         else:
             random.seed(19890604)
-            self.image_names = sorted(random.sample(image_names, min(8192, len(image_names))))
+            self.image_names = sorted(random.sample(image_names, min(self.args.val_size, len(image_names))))
             # self.image_names = image_names
             self.transform = transforms.Compose([
                 transforms.ToImage(),
@@ -120,9 +120,9 @@ class CustomDataset(Dataset):
 
         return torch.stack(shifteds).to(torch.float).mean(0)
     
-    def close(self, a, b):
+    def close(self, a, b, threshold=0.02 * 255):
         diff = np.abs(a - b) 
-        return diff < 0.05 * b
+        return diff < threshold
     
     def __getitem__(self, idx):
         image_name = self.image_names[idx]
@@ -189,10 +189,10 @@ class CustomDataset(Dataset):
                 gt_image = gt_image_
                 roi_image = roi_image_
                 histgram = histgram_
-            if random.random() > 0.8:
-                in_images = self.fake_shadow(in_images)
-                long_image = self.fake_shadow(long_image)
-                short_image = self.fake_shadow(short_image)
+            # if random.random() > 0.8:
+            #     in_images = self.fake_shadow(in_images)
+            #     long_image = self.fake_shadow(long_image)
+            #     short_image = self.fake_shadow(short_image)
                 
         X = torch.cat([in_images, long_image, short_image], dim=0)
         if self.mode == "train": 
@@ -227,11 +227,11 @@ class CustomDataset(Dataset):
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
         if self.args.histogram:
             X = torch.cat([X, histgram], dim=0) 
-        hard_shadow = self.close(Y, 50/255)
+        hard_shadow = self.close(Y, 50/255, threshold=0.02)
         Y = (Y > 0.95).float()
-        # if self.args.hard_shadow:
-        #     print_("Hit 5")
-        #     Y[hard_shadow] = -0.3
+        if self.args.hard_shadow:
+            print_("Hit 5")
+            Y[hard_shadow] = 2
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
 
 
@@ -259,9 +259,9 @@ if __name__ == "__main__":
     parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
     parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
     
-    argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2'
+    argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2 --hard_shadow'
     args = parser.parse_args(shlex.split(argString))
-    X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[0]
+    X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[random.randint(0, 1000)]
     std = torch.tensor([0.5, 0.5, 0.5])
     mean = torch.tensor([0.5, 0.5, 0.5])
     X = X[:3]
@@ -272,5 +272,9 @@ if __name__ == "__main__":
     print_(Y.shape)
     Y = Y.numpy()
     # Y = (Y - Y.min()) / (Y.max() - Y.min())
-    cv2.imwrite("test_gt.png", Y * 255)
+    # cv2.imwrite("test_gt.png", Y * 255)
+    import pylab
+    pylab.matshow(Y)
+    pylab.colorbar() 
+    pylab.savefig("test_gt.png")
     print_(X.shape, Y.shape, ROI.shape)

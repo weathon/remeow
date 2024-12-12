@@ -55,6 +55,8 @@ parser.add_argument('--image_size', type=int, default=512, help="Image size", ch
 parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
 parser.add_argument('--lambda2', type=float, default=30, help='Lambda2 for pretrained weights and new weights')
 parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning rate')
+parser.add_argument('--print_every', type=int, default=100, help='Print every n steps')
+parser.add_argument('--val_size', type=int, default=1024, help='Validation size')
 
 args = parser.parse_args()
 
@@ -101,8 +103,6 @@ def iou_loss(pred, target, ROI):
     assert pred.shape[1] == args.refine_steps, f"pred shape: {pred.shape}"
 
     assert pshape == target.shape == ROI.shape, f"pred shape: {pshape}, target shape: {target.shape}, ROI shape: {ROI.shape}"
-    # print(torch.sigmoid(pred).max(), ROI.max(), target.max())
-    # pred = torch.sigmoid(pred)[ROI>0.9] hu xi 
     
     total_loss = 0
     for i in range(args.refine_steps):
@@ -118,6 +118,20 @@ def iou_loss(pred, target, ROI):
     
     return total_loss
 
+def mutli_class_iou_loss(pred, target, ROI):
+    assert pred.shape[1] == 3, f"pred shape: {pred.shape}"
+    total_loss = 0
+    for class_name in range(3):
+        pred_ = pred[:,class_name][ROI>0.9]
+        target_ = target.float()[ROI>0.9] == class_name
+        intersection = (pred_ * target_).sum()
+        union = pred_.sum() + target_.sum() - intersection 
+        iou = (intersection + 1e-6) / (union + 1e-6)
+        conf = (pred_ - 0.5).abs().mean()
+        conf_pen = conf * args.conf_penalty
+        total_loss +=  (1 - iou + conf_pen)
+    return total_loss
+
 
 def regularization_loss(model_0, model_t):
     total_loss = 0
@@ -128,7 +142,7 @@ def regularization_loss(model_0, model_t):
         
     return total_loss / count
     
-loss_fn = iou_loss
+loss_fn = iou_loss if not args.hard_shadow else mutli_class_iou_loss
 
 wandb.init(project="Remeow", config=args)
 wandb.define_metric("pstep")

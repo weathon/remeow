@@ -40,7 +40,7 @@ class MyModel(nn.Module):
             nn.Conv2d(16, 8, 3, padding="same"),
             nn.Dropout2d(0.15),
             nn.ReLU(),
-            nn.Conv2d(8, 1, 3, padding="same"), 
+            nn.Conv2d(8, 3 if self.args.hard_shadow else 1, 3, padding="same"),
         ) 
         self.conv3d = torch.nn.Sequential(
             nn.Conv3d(3, 8, (3, 3, 3), padding="same"),
@@ -143,7 +143,11 @@ class MyModel(nn.Module):
         # print("e" * 100)
         mask = self.head(mask)
         # print("f" * 100)
-        mask = torch.sigmoid(mask)
+        assert mask.shape[1] == 3 if self.args.hard_shadow else 1, mask.shape
+        if self.args.hard_shadow:
+            mask = torch.nn.functional.softmax(mask, dim=1)
+        else:
+            mask = torch.sigmoid(mask)
         return mask
     
 def iou_loss(pred, target, ROI): 
@@ -177,13 +181,28 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, default=1e-5, help='Learning rate') 
     parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight decay')
     parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
+    parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
     parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
     parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
+    parser.add_argument('--image_size', type=str, default="512", help="Image size", choices=["512", "640"])
     parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
-    parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
+    parser.add_argument('--histogram', action="store_true", help='If use histogram')
+    parser.add_argument('--clip', type=float, default=1, help='Gradient clip norm')
+    parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
+    parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
+    parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
+    
     argString = '--fold 2 --steps 10000 --learning_rate 8e-5 --weight_decay 4e-3 --background_type sub --refine_step 1 --backbone 0'
     args = parser.parse_args(shlex.split(argString))
     import os
+    def regularization_loss(model_0, model_t):
+        total_loss = 0
+        count = 0
+        for param_0, param_t in zip(model_0, model_t):
+            total_loss += (param_0 - param_t).abs().sum()
+            count += param_0.size()[0]
+            
+        return total_loss / count
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2" 
     model = MyModel(args)
     model = torch.nn.DataParallel(model).cuda()
@@ -215,5 +234,5 @@ if __name__ == "__main__":
     wandb.define_metric("pstep")
     logger = wandb
     from trainer import Trainer
-    trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, iou_loss, args)
+    trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, iou_loss, args, regularization_loss)
     trainer.train()
