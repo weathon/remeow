@@ -115,28 +115,27 @@ def iou_loss(pred, target, ROI):
         conf = (pred_ - 0.5).abs().mean()
         conf_pen = conf * args.conf_penalty
         total_loss +=  (1 - iou + conf_pen) * (0.6 ** (args.refine_steps - i - 1))
-
+        # has to include background lass oitherwise iou for shadow is 0 no matter how larg is the shadow
     
     return total_loss
 
 def mutli_class_iou_loss(pred, target, ROI):
     assert pred.shape[1] == 3, f"pred shape: {pred.shape}"
     total_loss = 0
-    # class_weights = []
+    class_weights = [0.1, 0.45, 0.45]
     # for class_name in range(3):
-    #     class_weights.append(1 / (target.float() == class_name).sum())
+    #     class_weights.append(1 / (1e-6 + (target.float() == class_name).sum()))
     # class_weights = torch.tensor(class_weights).cuda()
-    # normalize
-    class_weights = class_weights / class_weights.sum()
+    # class_weights = class_weights / class_weights.sum()
+    # print(class_weights)
+    # it is fine at the begining but than also swapp background and shadow
     for class_name in range(3):
         pred_ = pred[:,class_name][ROI>0.9]
         target_ = target.float()[ROI>0.9] == class_name
         intersection = (pred_ * target_).sum()
         union = pred_.sum() + target_.sum() - intersection 
         iou = (intersection + 1e-6) / (union + 1e-6)
-        conf = (pred_ - 0.5).abs().mean()
-        conf_pen = conf * args.conf_penalty
-        total_loss +=  (1 - iou + conf_pen)
+        total_loss +=  (1 - iou) * class_weights[class_name]
     return total_loss
 
 
