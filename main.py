@@ -122,7 +122,13 @@ def iou_loss(pred, target, ROI):
 def mutli_class_iou_loss(pred, target, ROI):
     assert pred.shape[1] == 3, f"pred shape: {pred.shape}"
     total_loss = 0
-    for class_name in range(1, 3): #do not include the background 
+    # class_weights = []
+    # for class_name in range(3):
+    #     class_weights.append(1 / (target.float() == class_name).sum())
+    # class_weights = torch.tensor(class_weights).cuda()
+    # normalize
+    class_weights = class_weights / class_weights.sum()
+    for class_name in range(3):
         pred_ = pred[:,class_name][ROI>0.9]
         target_ = target.float()[ROI>0.9] == class_name
         intersection = (pred_ * target_).sum()
@@ -131,7 +137,7 @@ def mutli_class_iou_loss(pred, target, ROI):
         conf = (pred_ - 0.5).abs().mean()
         conf_pen = conf * args.conf_penalty
         total_loss +=  (1 - iou + conf_pen)
-    return total_loss/2
+    return total_loss
 
 
 def regularization_loss(model_0, model_t):
@@ -149,7 +155,7 @@ wandb.init(project="Remeow", config=args)
 wandb.define_metric("pstep")
 logger = wandb
 # model = model.cuda()
-# model.load_state_dict(torch.load("model.pth"))
+# model.load_state_dict(torch.load("model``.pth"))
 trainer = Trainer(model, optimizer, lr_scheduler, train_dataloader, val_dataloader, logger, loss_fn, args, regularization_loss)
 
 
