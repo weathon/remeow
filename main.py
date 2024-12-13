@@ -122,7 +122,7 @@ def iou_loss(pred, target, ROI):
 def mutli_class_iou_loss(pred, target, ROI):
     assert pred.shape[1] == 3, f"pred shape: {pred.shape}"
     total_loss = 0
-    for class_name in range(3):
+    for class_name in range(1, 3): #do not include the background 
         pred_ = pred[:,class_name][ROI>0.9]
         target_ = target.float()[ROI>0.9] == class_name
         intersection = (pred_ * target_).sum()
@@ -131,7 +131,7 @@ def mutli_class_iou_loss(pred, target, ROI):
         conf = (pred_ - 0.5).abs().mean()
         conf_pen = conf * args.conf_penalty
         total_loss +=  (1 - iou + conf_pen)
-    return total_loss
+    return total_loss/2
 
 
 def regularization_loss(model_0, model_t):
