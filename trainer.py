@@ -162,6 +162,12 @@ class Trainer:
             train_pred = self.train_step(X.cuda(), Y.cuda(), ROI.cuda()) 
             self.lr_scheduler.step()
             self.scheduler_steps += 1
+            
+            # weight decay = args.weight_decay to args.final_weight_decay with linear increase for total steps
+            
+            weight_decay = self.args.weight_decay + (self.args.final_weight_decay - self.args.weight_decay) * self.scheduler_steps / self.args.steps
+            for param_group in self.optimizer.param_groups:
+                param_group['weight_decay'] = weight_decay
             if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
@@ -171,9 +177,6 @@ class Trainer:
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")
                     # self.logger.log({"pstep":self.step, "grad": self.logger.Histogram(grad)})
             # if train_i % 100 == 0: 
-                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.02
-                for param_group in self.optimizer.param_groups:
-                    param_group['weight_decay'] = weight_decay
                 self.logger.log({"pstep":self.step, "loss": np.mean(self.running_loss), "reg_loss": np.mean(self.runing_reg_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 printred(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
@@ -214,7 +217,7 @@ class Trainer:
                 self.step += 1
                 if self.step >= 1000:
                     raise StopIteration
-                torch.save(self.model.state_dict(), f"model.pth")
+                torch.save(self.model.state_dict(), f"{self.args.save_name}.pth")
 
     def train(self):
         self.scheduler_steps = 0

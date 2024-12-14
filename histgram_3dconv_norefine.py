@@ -41,9 +41,10 @@ def print_trainable_parameters(model):
     )
     
 class MyModel(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, softmax=True):
         super(MyModel, self).__init__() 
         self.args = args 
+        self.softmax = softmax
         self.backbone = get_backbone(args.backbone, 0.1, hist_dim=32 if args.histogram else 0)
         if args.lora:
             config = LoraConfig(
@@ -167,7 +168,10 @@ class MyModel(nn.Module):
         # print("f" * 100)
         assert mask.shape[1] == 3 if self.args.hard_shadow else 1, mask.shape
         if self.args.hard_shadow:
-            mask = torch.nn.functional.softmax(mask, dim=1)
+            if self.softmax:
+                mask = torch.nn.functional.softmax(mask, dim=1)
+            else:
+                mask = mask
         else:
             mask = torch.sigmoid(mask)
         return mask

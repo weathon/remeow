@@ -58,6 +58,9 @@ parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning
 parser.add_argument('--print_every', type=int, default=100, help='Print every n steps')
 parser.add_argument('--val_size', type=int, default=1024, help='Validation size')
 parser.add_argument('--lora', action="store_true", help='If use LoRA')
+parser.add_argument('--save_name', type=str, default="model", help='Model save name')
+parser.add_argument('--final_weight_decay', type=float, default=3e-2, help='Final weight decay')
+parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
 
 args = parser.parse_args()
 
@@ -77,17 +80,17 @@ model = MyModel(args)
 # model = ISNetBackbone(args) 
 model = torch.nn.DataParallel(model).cuda() #should be here before optimizer, that was why no converge and error
 # head conv3d t_dim upsample hist_encoder
-# optimizer = torch.optim.AdamW(
-#     [
-#         {'params': model.module.head.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-#         {'params': model.module.conv3d.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-#         {'params': model.module.t_dim.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-#         {'params': model.module.upsample.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-#         {'params': model.module.hist_encoder.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
-#         {'params': model.module.backbone.parameters(), 'lr': args.learning_rate * 0.2, "weight_decay": args.weight_decay * 0.2},
-#     ]
-#     , lr=args.learning_rate, weight_decay=args.weight_decay)
-optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+optimizer = torch.optim.AdamW(
+    [
+        {'params': model.module.head.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.conv3d.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.t_dim.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.upsample.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.hist_encoder.parameters(), 'lr': args.learning_rate, "weight_decay": args.weight_decay},
+        {'params': model.module.backbone.parameters(), 'lr': args.learning_rate * 0.2, "weight_decay": args.weight_decay * 0.2},
+    ]
+    , lr=args.learning_rate, weight_decay=args.weight_decay)
+# optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
 
 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.steps, eta_min=args.lr_min)
 # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.2, patience=20, verbose=True, cooldown=5, threshold=0.001) 

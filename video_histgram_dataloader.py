@@ -477,7 +477,10 @@ class CustomDataset(Dataset):
             #     in_images = self.fake_shadow(in_images)
             #     long_image = self.fake_shadow(long_image)
             #     short_image = self.fake_shadow(short_image)
-                
+        if self.args.use_difference:
+            long_image = long_image - in_images[0]
+            short_image = short_image - in_images[0]
+            
         X = torch.cat([in_images, long_image, short_image], dim=0)
         if self.mode == "train": 
             if random.random() > 0.7:
@@ -542,27 +545,35 @@ if __name__ == "__main__":
     parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
     parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
     parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
+    parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
     
-    argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2 --hard_shadow'
+    argString = '--gpu 0 --fold 2 --use_difference --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2 --hard_shadow'
     args = parser.parse_args(shlex.split(argString))
     X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[944]
     #random.randint(0, 1000)
     std = torch.tensor([0.5, 0.5, 0.5])
     mean = torch.tensor([0.5, 0.5, 0.5])
+    bg = X[-3:]
     X = X[:3]
+    print(bg.shape)
     # denorm
     X = X * std[:, None, None]
     X = X + mean[:, None, None]
+    
+    bg = bg * std[:, None, None]
+    bg = bg + mean[:, None, None]
     cv2.imwrite("test.png", X.numpy().transpose(1, 2, 0) * 255)
     print_(Y.shape)
     Y = Y.numpy()
     # Y = (Y - Y.min()) / (Y.max() - Y.min())
     # cv2.imwrite("test_gt.png", Y * 255)
     import pylab
-    pylab.subplot(1, 2, 1)
+    pylab.subplot(1, 3, 1)
     pylab.imshow(Y, interpolation="nearest", origin='upper', vmax=2, vmin=0)
     pylab.colorbar() 
-    pylab.subplot(1, 2, 2)
+    pylab.subplot(1, 3, 2)
     pylab.imshow(X[:3].permute(1, 2, 0), interpolation="nearest", origin='upper')
+    pylab.subplot(1, 3, 3)
+    pylab.imshow(bg.permute(1, 2, 0), interpolation="nearest", origin='upper')
     pylab.savefig("test_gt.png")
     print_(X.shape, Y.shape, ROI.shape)
