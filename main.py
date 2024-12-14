@@ -61,6 +61,7 @@ parser.add_argument('--lora', action="store_true", help='If use LoRA')
 parser.add_argument('--save_name', type=str, default="model", help='Model save name')
 parser.add_argument('--final_weight_decay', type=float, default=3e-2, help='Final weight decay')
 parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
+parser.add_argument('--num_classes', type=int, default=3, help='Number of classes')
 
 args = parser.parse_args()
 
@@ -123,16 +124,19 @@ def iou_loss(pred, target, ROI):
     return total_loss
 
 def mutli_class_iou_loss(pred, target, ROI):
-    assert pred.shape[1] == 3, f"pred shape: {pred.shape}"
+    assert pred.shape[1] == args.num_classes, f"pred shape: {pred.shape}"
     total_loss = 0
-    class_weights = [0.1, 0.45, 0.45]
+    if args.num_classes == 3:
+        class_weights = [0.1, 0.45, 0.45]
+    else:
+        class_weights = [0.5, 0.5]
     # for class_name in range(3):
     #     class_weights.append(1 / (1e-6 + (target.float() == class_name).sum()))
     # class_weights = torch.tensor(class_weights).cuda()
     # class_weights = class_weights / class_weights.sum()
     # print(class_weights)
     # it is fine at the begining but than also swapp background and shadow
-    for class_name in range(3):
+    for class_name in range(args.num_classes):
         pred_ = pred[:,class_name][ROI>0.9]
         target_ = target.float()[ROI>0.9] == class_name
         intersection = (pred_ * target_).sum()
@@ -145,10 +149,14 @@ def mutli_class_iou_loss(pred, target, ROI):
 def regularization_loss(model_0, model_t):
     total_loss = 0
     count = 0
+    count2 = 0
     for param_0, param_t in zip(model_0, model_t):
         total_loss += (param_0 - param_t).abs().sum()
-        count += param_0.size()[0]
-        
+        # count += param_0.size()[0] #this is only one size
+        count += param_0.numel() #it should be this!!!
+        # print(param_0.size()[0]/param_0.numel())
+        # count2 += param_0.size()[0]
+    # print(count/count2)  
     return total_loss / count
     
 loss_fn = iou_loss if not args.hard_shadow else mutli_class_iou_loss

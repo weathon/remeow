@@ -408,6 +408,7 @@ class CustomDataset(Dataset):
         diff = np.abs(a - b) 
         return diff < threshold
     
+    
     def __getitem__(self, idx):
         image_name = self.image_names[idx]
         print_(image_name)
@@ -516,7 +517,7 @@ class CustomDataset(Dataset):
             X = torch.cat([X, histgram], dim=0) 
         hard_shadow = self.close(Y, 50/255, threshold=0.02)
         Y = (Y > 0.95).float()
-        if self.args.hard_shadow:
+        if self.args.num_classes == 3:
             print_("Hit 5")
             Y[hard_shadow] = 2
         return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)

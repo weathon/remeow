@@ -136,7 +136,7 @@ class Trainer:
             # print(pred_.shape, Y.shape)
             if self.args.hard_shadow:
                 pred = torch.where(ROI > 0.9, pred, 0)
-                pred = pred / 2.0
+                pred = pred / 2.0 # why /2.0 0-2 -> 0-1
             else:
                 pred = torch.where(ROI > 0.9, pred, 0) 
             rough_pred = torch.where(ROI > 0.9, rough_pred, 0)
@@ -145,7 +145,7 @@ class Trainer:
             Y = Y.float()
             # print(pred_.shape, Y.shape)
             
-            f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
+            f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e) 
             # if not self.validate_f1:
             #     sklearn_f1 = f1_score(Y.cpu().numpy(), pred_.cpu().numpy())
             #     if not np.isclose(f1.item(), sklearn_f1):
@@ -165,13 +165,17 @@ class Trainer:
             
             # weight decay = args.weight_decay to args.final_weight_decay with linear increase for total steps
             
-            weight_decay = self.args.weight_decay + (self.args.final_weight_decay - self.args.weight_decay) * self.scheduler_steps / self.args.steps
-            for param_group in self.optimizer.param_groups:
-                param_group['weight_decay'] = weight_decay
+            # weight_decay = self.args.weight_decay + (self.args.final_weight_decay - self.args.weight_decay) * self.scheduler_steps / self.args.steps
+            # for param_group in self.optimizer.param_groups:
+            #     param_group['weight_decay'] = weight_decay
             if self.scheduler_steps == self.args.steps:
                 5/0
             # print(ROI[0].max())
             if train_i % self.args.print_every == 0:
+                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.008
+                for param_group in self.optimizer.param_groups:
+                    param_group['weight_decay'] = weight_decay
+                
                 if train_i != 0:
                     grad = self.getgrad()
                     print(f"\nMean Grad: {grad.mean()}, Max Grad: {grad.max()}, Min Grad: {grad.min()}")

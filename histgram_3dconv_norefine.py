@@ -63,7 +63,7 @@ class MyModel(nn.Module):
             nn.Conv2d(16, 8, 3, padding="same"),
             nn.Dropout2d(0.15),
             nn.ReLU(),
-            nn.Conv2d(8, 3 if self.args.hard_shadow else 1, 3, padding="same"),
+            nn.Conv2d(8, self.args.num_classes, 3, padding="same"),
         ) 
         self.conv3d = torch.nn.Sequential(
             nn.Conv3d(3, 8, (3, 3, 3), padding="same"),
@@ -166,14 +166,12 @@ class MyModel(nn.Module):
         # print("e" * 100)
         mask = self.head(mask)
         # print("f" * 100)
-        assert mask.shape[1] == 3 if self.args.hard_shadow else 1, mask.shape
-        if self.args.hard_shadow:
-            if self.softmax:
-                mask = torch.nn.functional.softmax(mask, dim=1)
-            else:
-                mask = mask
+        assert mask.shape[1] == self.args.num_classes
+        if self.softmax:
+            mask = torch.nn.functional.softmax(mask, dim=1)
         else:
-            mask = torch.sigmoid(mask)
+            mask = mask
+
         return mask
     
 def iou_loss(pred, target, ROI): 
