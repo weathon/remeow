@@ -62,6 +62,7 @@ parser.add_argument('--save_name', type=str, default="model", help='Model save n
 parser.add_argument('--final_weight_decay', type=float, default=3e-2, help='Final weight decay')
 parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
 parser.add_argument('--num_classes', type=int, default=3, help='Number of classes')
+parser.add_argument('--recent_frames', type=str, default="conv3d", help='Recent frames method', choices=["conv3d", "linear", "none"])
 
 args = parser.parse_args()
 

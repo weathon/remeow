@@ -3,10 +3,16 @@ import torch.nn as nn
 import torch
 from transformers import SegformerForSemanticSegmentation
 
-conv3d = True
 
-def get_backbone(n, dropout=0.1, hist_dim = 32):
+def get_backbone(n, dropout=0.1, hist_dim = 32, recent_frames="conv3d"):
     n = int(n)
+    # source_dim = 17 + hist_dim if recent_frames=="conv3d" else 12 + hist_dim
+    if recent_frames == "conv3d":
+        source_dim = 17 + hist_dim
+    elif recent_frames == "linear":
+        source_dim = 12 + hist_dim
+    else:
+        source_dim = 9 + hist_dim
     if n != 5:
         in_dim = [32, 64, 64, 64, 64][n]
         out_dim = [256, 256, 768, 768, 768][n]
@@ -14,7 +20,7 @@ def get_backbone(n, dropout=0.1, hist_dim = 32):
         config.attention_probs_dropout_prob = dropout
         config.hidden_dropout_prob = dropout
         backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + hist_dim if conv3d else 12 + hist_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(source_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
         return backbone
     else:
@@ -24,9 +30,11 @@ def get_backbone(n, dropout=0.1, hist_dim = 32):
         config.attention_probs_dropout_prob = dropout
         config.hidden_dropout_prob = dropout
         backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(17 + hist_dim if conv3d else 12 + hist_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(source_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
         backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
         return backbone
+    
+    
 from peft import LoraConfig, TaskType
 from peft import get_peft_model
 def print_trainable_parameters(model):
@@ -45,7 +53,7 @@ class MyModel(nn.Module):
         super(MyModel, self).__init__() 
         self.args = args 
         self.softmax = softmax
-        self.backbone = get_backbone(args.backbone, 0.1, hist_dim=32 if args.histogram else 0)
+        self.backbone = get_backbone(args.backbone, 0.1, hist_dim=32 if args.histogram else 0, recent_frames=self.args.recent_frames)
         if args.lora:
             config = LoraConfig(
                 r=128,
@@ -74,7 +82,7 @@ class MyModel(nn.Module):
             nn.ReLU(),
             nn.Conv3d(16, 8, (3, 3, 3), padding="same"), 
             nn.Dropout3d(0.1),
-        ) if conv3d else torch.nn.Identity()
+        ) if self.args.recent_frames == "conv3d" else torch.nn.Identity()
 
         self.t_dim = nn.Linear(8, 1)
         if self.args.mask_upsample == "interpolate":
@@ -146,13 +154,19 @@ class MyModel(nn.Module):
             hist_features = torch.nn.functional.interpolate(hist_features, size=(self.args.image_size, self.args.image_size), mode="nearest")
         # print(hist_features.shape) 
         # print("b" * 100)
-        assert frames.shape[1:] == (8 if conv3d else 3, 8, self.args.image_size, self.args.image_size), frames.shape
-        frames = frames.permute(0, 1, 3, 4, 2)
-        assert frames.shape[1:] == (8 if conv3d else 3, self.args.image_size, self.args.image_size, 8)
-        frames = self.t_dim(frames).squeeze(-1)
-        assert frames.shape[1:] == (8 if conv3d else 3, self.args.image_size, self.args.image_size)
-        X = torch.cat([frames, short, long, current], dim=1)
-        assert X.shape[1:] == (17 if conv3d else 12, self.args.image_size, self.args.image_size)
+        if self.args.recent_frames != "none":
+            assert frames.shape[1:] == (8 if self.args.recent_frames == "conv3d" else 3, 8, self.args.image_size, self.args.image_size), frames.shape
+            frames = frames.permute(0, 1, 3, 4, 2)
+            assert frames.shape[1:] == (8 if self.args.recent_frames == "conv3d" else 3, self.args.image_size, self.args.image_size, 8)
+            frames = self.t_dim(frames).squeeze(-1)
+            assert frames.shape[1:] == (8 if self.args.recent_frames == "conv3d" else 3, self.args.image_size, self.args.image_size)
+            X = torch.cat([frames, short, long, current], dim=1)
+            assert X.shape[1:] == (17 if self.args.recent_frames == "conv3d" else 12, self.args.image_size, self.args.image_size)
+        else:
+            X = torch.cat([short, long, current], dim=1)
+            assert X.shape[1:] == (9, self.args.image_size, self.args.image_size)
+            
+            
         if self.args.histogram:
             X = torch.cat([X, hist_features], dim=1)
         
@@ -205,18 +219,29 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, default=1e-5, help='Learning rate') 
     parser.add_argument('--weight_decay', type=float, default=1e-2, help='Weight decay')
     parser.add_argument('--mask_upsample', type=str, default="interpolate", help='Mask upsample method', choices=["interpolate", "transpose_conv", "shuffle"])
-    parser.add_argument('--background_type', type=str, default="mog2", help='Background type', choices=["mog2", "sub"])
     parser.add_argument('--refine_see_bg', action="store_true", help='If refine operator can see background')
-    parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4"])
-    parser.add_argument('--image_size', type=str, default="512", help="Image size", choices=["512", "640"])
+    parser.add_argument('--backbone', type=str, default="4", help='Backbone size to use', choices=["0", "1", "2", "3", "4", "5"])
     parser.add_argument('--refine_steps', type=int, default=5, help='Number of refine steps')
+    parser.add_argument('--background_type', type=str, default="mog2", choices=["mog2", "sub"], help='Background type, mog2 means MOG2, sub means SuBSENSE')
     parser.add_argument('--histogram', action="store_true", help='If use histogram')
     parser.add_argument('--clip', type=float, default=1, help='Gradient clip norm')
     parser.add_argument('--note', type=str, default="", help='Note for this run (for logging purpose)')
     parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
+    parser.add_argument('--image_size', type=int, default=512, help="Image size", choices=[512, 640])
     parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
+    parser.add_argument('--lambda2', type=float, default=30, help='Lambda2 for pretrained weights and new weights')
+    parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning rate')
+    parser.add_argument('--print_every', type=int, default=100, help='Print every n steps')
+    parser.add_argument('--val_size', type=int, default=1024, help='Validation size')
+    parser.add_argument('--lora', action="store_true", help='If use LoRA')
+    parser.add_argument('--save_name', type=str, default="model", help='Model save name')
+    parser.add_argument('--final_weight_decay', type=float, default=3e-2, help='Final weight decay')
+    parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
+    parser.add_argument('--num_classes', type=int, default=3, help='Number of classes')
+    parser.add_argument('--recent_frames', type=str, default="conv3d", help='Recent frames method', choices=["conv3d", "linear", "none"])
+
+    argString = '--fold 2 --steps 25000 --learning_rate 3e-5 --weight_decay 2e-2 --background_type mog2 --refine_step 1 --backbone 4 --image_size 512 --gpu 1 --clip 2 --conf_penalty 0.05 --lambda2 100 --hard_shadow --save_name 2 --final_weight_decay 4e-2 --final_weight_decay 5e-2 --save_name 6 --print_every 1000 --recent_frames conv3d'
     
-    argString = '--fold 2 --steps 10000 --learning_rate 8e-5 --weight_decay 4e-3 --background_type sub --refine_step 1 --backbone 0'
     args = parser.parse_args(shlex.split(argString))
     import os
     def regularization_loss(model_0, model_t):
