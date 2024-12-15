@@ -223,7 +223,7 @@ class Trainer:
                 self.step += 1
                 if self.step >= 1000:
                     raise StopIteration
-                torch.save(self.model.state_dict(), f"{self.args.save_name}.pth")
+                torch.save(self.model.state_dict(), f"{self.args.save_name}_{self.step}.pth")
 
     def train(self):
         self.scheduler_steps = 0

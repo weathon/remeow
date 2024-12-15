@@ -32,7 +32,7 @@ import wandb
 
 import os
 import argparse
-
+import random
 
 parser = argparse.ArgumentParser(description="Training script")
 parser.add_argument('--fold', type=int, required=True, help='Fold number for cross-validation')
@@ -58,11 +58,12 @@ parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning
 parser.add_argument('--print_every', type=int, default=100, help='Print every n steps')
 parser.add_argument('--val_size', type=int, default=1024, help='Validation size')
 parser.add_argument('--lora', action="store_true", help='If use LoRA')
-parser.add_argument('--save_name', type=str, default="model", help='Model save name')
+parser.add_argument('--save_name', type=str, default=str(random.randint(1000000, 99999999999)), help='Model save name')
 parser.add_argument('--final_weight_decay', type=float, default=3e-2, help='Final weight decay')
 parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
 parser.add_argument('--num_classes', type=int, default=3, help='Number of classes')
 parser.add_argument('--recent_frames', type=str, default="conv3d", help='Recent frames method', choices=["conv3d", "linear", "none"])
+parser.add_argument('--checkpoint', type=str, default="", help='Load checkpoint')
 
 args = parser.parse_args()
 
@@ -81,6 +82,11 @@ from video_histgram_dataloader import CustomDataset
 model = MyModel(args) 
 # model = ISNetBackbone(args) 
 model = torch.nn.DataParallel(model).cuda() #should be here before optimizer, that was why no converge and error
+if args.checkpoint != "":
+    model.load_state_dict(torch.load(args.checkpoint, weights_only=False))
+    print("Checkpoint loaded")
+    
+    
 # head conv3d t_dim upsample hist_encoder
 optimizer = torch.optim.AdamW(
     [
@@ -158,6 +164,8 @@ def regularization_loss(model_0, model_t):
         # print(param_0.size()[0]/param_0.numel())
         # count2 += param_0.size()[0]
     # print(count/count2)  
+    # print(count)
+    # 5/0
     return total_loss / count
     
 loss_fn = iou_loss if not args.hard_shadow else mutli_class_iou_loss
