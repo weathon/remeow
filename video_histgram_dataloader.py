@@ -353,8 +353,8 @@ class CustomDataset(Dataset):
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
         self.random_resized_crop = transforms.RandomResizedCrop(IMG_SIZE, scale=(0.25, 1.5), ratio=(0.5, 1.5), interpolation=NEAREST)
 
-    def crop(self, in_image, long_image, short_image, gt_image, roi_image, histgram):
-        stacked = torch.cat([in_image, long_image, short_image, gt_image, roi_image, histgram], dim=0)
+    def crop(self, in_image, long_image, short_image, gt_image, roi_image):
+        stacked = torch.cat([in_image, long_image, short_image, gt_image, roi_image], dim=0)
         cropped = self.random_resized_crop(stacked)
         
         pointer0 = 0
@@ -369,9 +369,8 @@ class CustomDataset(Dataset):
         short_image = cropped[pointer2:pointer3]
         gt_image = cropped[pointer3:pointer4]
         roi_image = cropped[pointer4:pointer5]
-        histgram = cropped[pointer5:] 
         
-        return in_image, long_image, short_image, gt_image, roi_image, histgram
+        return in_image, long_image, short_image, gt_image, roi_image
     
     def fake_shadow(self, img):
         shifted_imgs = torchvision.transforms.functional.affine(img, angle=0, translate=(random.uniform(0, 20), random.uniform(0, 20)), scale=1, shear = random.uniform(-45,45))
@@ -452,29 +451,27 @@ class CustomDataset(Dataset):
             in_image = self.image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
             in_images.append(in_image)
             
-        histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
-        histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
-        histgram = torch.nn.functional.interpolate(histgram, size=(IMG_SIZE, IMG_SIZE), mode="nearest")
-        histgram = histgram.flatten(0, 1)
+        # histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
+        # histgram = histgram.permute(0, 3, 1, 2).to(torch.float32)
+        # histgram = torch.nn.functional.interpolate(histgram, size=(IMG_SIZE, IMG_SIZE), mode="nearest")
+        # histgram = histgram.flatten(0, 1)
         
         in_images = torch.cat(in_images, dim=0)
         long_image = self.image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         short_image = self.image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
             if random.random() > 0.5:
-                in_image_, long_image_, short_image_, gt_image_, roi_image_, histgram_ = self.crop(in_images, long_image, short_image, gt_image, roi_image, histgram)
+                in_image_, long_image_, short_image_, gt_image_, roi_image_ = self.crop(in_images, long_image, short_image, gt_image, roi_image)
                 assert in_image_.shape == in_images.shape
                 assert long_image_.shape == long_image.shape
                 assert short_image_.shape == short_image.shape
                 assert gt_image_.shape == gt_image.shape
                 assert roi_image_.shape == roi_image.shape
-                assert histgram_.shape == histgram.shape
                 in_images = in_image_
                 long_image = long_image_
                 short_image = short_image_
                 gt_image = gt_image_
                 roi_image = roi_image_
-                histgram = histgram_
             # if random.random() > 0.8:
             #     in_images = self.fake_shadow(in_images)
             #     long_image = self.fake_shadow(long_image)
@@ -511,11 +508,9 @@ class CustomDataset(Dataset):
                 X = torchvision.transforms.functional.rotate(X, angle)
                 Y = torchvision.transforms.functional.rotate(Y, angle)
                 ROI = torchvision.transforms.functional.rotate(ROI, angle, interpolation=NEAREST)
-                histgram = torchvision.transforms.functional.rotate(histgram, angle)
 
         # assert (histgram_.reshape(51, 3, 512, 512) == histgram).all()
-        if self.args.histogram:
-            X = torch.cat([X, histgram], dim=0) 
+ 
         hard_shadow = self.close(Y, 50/255, threshold=0.02)
         Y = (Y > 0.95).float()
         if self.args.num_classes == 3:

@@ -43,15 +43,15 @@ args = parser.parse_args(shlex.split('--fold 1 --steps 50000 --learning_rate 3e-
 import torch
 
 val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "val", filename=True)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=True, num_workers=30, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True) 
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=True, num_workers=32, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True) 
 
-# %%
+# %%wanglezhege
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 model = MyModel(args)
 model = torch.nn.DataParallel(model).cuda()
 # model.load_state_dict(torch.load("86677878221_40.pth"))
-model.load_state_dict(torch.load("86677878221_40.pth"))
+model.load_state_dict(torch.load("86677878221_40.pth", weights_only=False))
 
 # %%
 class BinaryConfusion:
@@ -89,8 +89,10 @@ for i in videonames:
 
 with torch.no_grad():
     model.eval()
-    for i, (images, masks, ROI, filename) in enumerate(tqdm.tqdm(val_dataloader)):
-        video_name = "_".join(filename[0].split("_")[:2]) #just relized something, this is jkust the first filename no wonder all cat is 80 
+    for i, (images, masks, ROI, filenames) in enumerate(tqdm.tqdm(val_dataloader)):
+        print(1)
+        video_names = ["_".join(filename.split("_")[:2]) for filename in filenames]
+        assert len(set(video_names)) == 1
         images = images.cuda()
         masks = masks.cuda()
         outputs = model(images).argmax(1) == 1
@@ -98,7 +100,7 @@ with torch.no_grad():
         outputs = outputs[(ROI>0.9)]
         masks = masks[(ROI>0.9)]
         assert outputs.shape == masks.shape
-        confusions[video_name].update(masks, outputs > 0.5)
+        confusions[video_names[0]].update(masks, outputs > 0.5)
 
 # %%
 # confusion.get_f1() #YES!!!!! taiidonghhletaijingzhangyoujingzhangyoujidong
