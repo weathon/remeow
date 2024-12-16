@@ -27,7 +27,7 @@ parser.add_argument('--hard_shadow', action="store_true", help='If use hard shad
 parser.add_argument('--lambda2', type=float, default=30, help='Lambda2 for pretrained weights and new weights')
 parser.add_argument('--lr_min', type=float, default=1e-5, help='Minimum learning rate')
 parser.add_argument('--print_every', type=int, default=100, help='Print every n steps')
-parser.add_argument('--val_size', type=int, default=102400000000000, help='Validation size')
+parser.add_argument('--val_size', type=int, default=10240000000, help='Validation size')
 parser.add_argument('--lora', action="store_true", help='If use LoRA')
 parser.add_argument('--save_name', type=str, default=str(random.randint(1000000, 99999999999)), help='Model save name')
 parser.add_argument('--final_weight_decay', type=float, default=3e-2, help='Final weight decay')
@@ -64,6 +64,7 @@ class BinaryConfusion:
     def update(self, y_true, y_pred):
         y_true = y_true.flatten()
         y_pred = y_pred.flatten()
+        assert y_true.shape == y_pred.shape
         self.tp += torch.sum((y_true == 1) & (y_pred == 1))
         self.fn += torch.sum((y_true == 1) & (y_pred == 0))
         self.fp += torch.sum((y_true == 0) & (y_pred == 1))
@@ -87,7 +88,7 @@ os.makedirs("results", exist_ok=True)
 confusions = {}
 for i in videonames:
     confusions[i] = BinaryConfusion()
-
+import cv2
 with torch.no_grad():
     model.eval()
     for i, (images, masks, ROI, filenames) in enumerate(tqdm.tqdm(val_dataloader)):
@@ -103,7 +104,23 @@ with torch.no_grad():
             assert outputs_.shape == masks_.shape
             confusions[video_names[j]].update(masks_, outputs_ > 0.5)
             
-        
+            # concate masks[j], output[j], images[j] into one image and save it
+            mask = masks[j].cpu().numpy()
+            mask = mask * 255
+            mask = cv2.cvtColor(mask.astype("uint8"), cv2.COLOR_GRAY2BGR)
+            mask = mask.astype("uint8")
+            output = outputs[j].cpu().numpy()
+            output = output * 255
+            output = cv2.cvtColor(output.astype("uint8"), cv2.COLOR_GRAY2BGR)
+            output = output.astype("uint8")
+            image = images[j].cpu().numpy()
+            image = image * 255
+            image = image.astype("uint8")
+            image = image.transpose(1, 2, 0)
+            # print(image.shape, mask.shape, output.shape)
+            to_save = cv2.hconcat([mask, image[:,:,:3], output])
+            cv2.imwrite(f"results/{filenames[j]}.png", to_save)
+                    
         if i % 100 == 0:
             f1 = {}
             for i in videonames:
@@ -119,3 +136,19 @@ with torch.no_grad():
                     f1_class[class_name].append(f1[i].item())
 
             print(f1_class)
+            
+            
+f1 = {}
+for i in videonames:
+    f1[i] = confusions[i].get_f1()
+
+# %%
+f1_class = {}
+for i in videonames:
+    class_name = i.split("_")[0]
+    if class_name not in f1_class:
+        f1_class[class_name] = []
+    if f1[i] != 0:
+        f1_class[class_name].append(f1[i].item())
+
+print(f1_class)

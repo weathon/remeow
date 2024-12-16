@@ -133,7 +133,8 @@ class Trainer:
             if f1 != 0:
                 total += f1
                 count += 1
-        return total / count
+                print(i, self.confusions[i].get_f1().item())
+        return total / (count + 1e-6)
     
     
     def validate(self, X, Y, ROI, filenames): 
@@ -141,11 +142,11 @@ class Trainer:
         with torch.no_grad():
             pred = self.model(X)
             for j in range(pred.shape[0]):
-                outputs_ = pred[j][(ROI[j]>0.9)]
+                outputs_ = pred.argmax(dim=1)[j][(ROI[j]>0.9)]
                 masks_ = Y[j][(ROI[j]>0.9)]
                 assert outputs_.shape == masks_.shape
                 video_name = "_".join(filenames[j].split("_")[:2])
-                self.confusions[video_name[j]].update(masks_, outputs_ > 0.5)
+                self.confusions[video_name].update(masks_, outputs_ > 0.5)
             loss = self.loss_fn(pred, Y, ROI)
             e = 1e-6
             # pred = torch.sigmoid(pred)
@@ -192,7 +193,7 @@ class Trainer:
             # print(ROI[0].max())
             
             if train_i % 100 == 0:
-                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.008
+                weight_decay = self.optimizer.param_groups[0]["weight_decay"] * 1.001
                 for param_group in self.optimizer.param_groups:
                     param_group['weight_decay'] = weight_decay
                 

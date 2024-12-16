@@ -2,37 +2,40 @@ from transformers import BeitForSemanticSegmentation, SegformerConfig
 import torch.nn as nn
 import torch
 from transformers import SegformerForSemanticSegmentation
+import sys
+sys.path.append("./DIS/IS-Net")
+from models import *
 
 
 def get_backbone(n, dropout=0.1, hist_dim = 32, recent_frames="conv3d"):
-    n = int(n)
-    # source_dim = 17 + hist_dim if recent_frames=="conv3d" else 12 + hist_dim
-    if recent_frames == "conv3d":
-        source_dim = 17 + hist_dim
-    elif recent_frames == "linear":
-        source_dim = 12 + hist_dim
-    else:
-        source_dim = 9 + hist_dim
-    if n != 5:
-        in_dim = [32, 64, 64, 64, 64][n]
-        out_dim = [256, 256, 768, 768, 768][n]
-        config = SegformerConfig.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
-        config.attention_probs_dropout_prob = dropout
-        config.hidden_dropout_prob = dropout
-        backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(source_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-        backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
-        return backbone
-    else:
-        in_dim = 64
-        out_dim = 768
-        config = SegformerConfig.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640")
-        config.attention_probs_dropout_prob = dropout
-        config.hidden_dropout_prob = dropout
-        backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640", config=config)
-        backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(source_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
-        backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
-        return backbone
+        n = int(n)
+        # source_dim = 17 + hist_dim if recent_frames=="conv3d" else 12 + hist_dim
+        if recent_frames == "conv3d":
+            source_dim = 17 + hist_dim
+        elif recent_frames == "linear":
+            source_dim = 12 + hist_dim
+        else:
+            source_dim = 9 + hist_dim
+        if n != 5:
+            in_dim = [32, 64, 64, 64, 64][n]
+            out_dim = [256, 256, 768, 768, 768][n]
+            config = SegformerConfig.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512")
+            config.attention_probs_dropout_prob = dropout
+            config.hidden_dropout_prob = dropout
+            backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b{n}-finetuned-ade-512-512", config=config)
+            backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(source_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+            backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
+            return backbone
+        else:
+            in_dim = 64
+            out_dim = 768
+            config = SegformerConfig.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640")
+            config.attention_probs_dropout_prob = dropout
+            config.hidden_dropout_prob = dropout
+            backbone = SegformerForSemanticSegmentation.from_pretrained(f"nvidia/segformer-b5-finetuned-ade-640-640", config=config)
+            backbone.segformer.encoder.patch_embeddings[0].proj = torch.nn.Conv2d(source_dim, in_dim, kernel_size=(7, 7), stride=(4, 4), padding=(3, 3))
+            backbone.decode_head.classifier = torch.nn.Conv2d(out_dim, 64, kernel_size=(1, 1), stride=(1, 1))
+            return backbone
     
     
 from peft import LoraConfig, TaskType
@@ -174,7 +177,7 @@ class MyModel(nn.Module):
         # print("c" * 100)
         X = self.backbone(X).logits 
         # print("d" * 100)
-        assert X.shape[1:] == (64, 128, 128), X.shape
+        # assert X.shape[1:] == (64, 128, 128), X.shape
 
         mask = self.upsample(X) 
         # print("e" * 100)
@@ -187,7 +190,25 @@ class MyModel(nn.Module):
             mask = mask
 
         return mask
-    
+
+
+class ISNetBackbone(nn.Module):
+    def __init__(self, args):
+        super(ISNetBackbone, self).__init__()
+        self.backbone = ISNetDIS().cuda()
+        self.backbone.load_state_dict(torch.load("/home/wg25r/isnet-general-use.pth"))
+        self.backbone.conv_in = nn.Conv2d(9, 64, kernel_size=(3,3), stride=(2,2), padding=(1,1))
+        self.backbone.side1 = torch.nn.Conv2d(64, 3, 3, 1, 1)
+
+    def forward(self, X):
+        X = X[:,:30]
+        frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]        
+        current = frames[:, :3]
+        x = torch.cat([short, long, current], dim=1)
+        x = self.backbone(x)[0][0]
+        return x
+
+
 def iou_loss(pred, target, ROI): 
     pshape = pred.shape[:1] + pred.shape[2:]
     assert pred.shape[1] == args.refine_steps, f"pred shape: {pred.shape}"
