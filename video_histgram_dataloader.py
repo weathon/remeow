@@ -326,7 +326,15 @@ class CustomDataset(Dataset):
         self.mean = torch.tensor([0.485, 0.456, 0.406] * 3)
         self.std = torch.tensor([0.229, 0.224, 0.225] * 3)
         if mode == 'train':
-            self.image_names = image_names 
+            self.image_names = []
+            for image_name in image_names:
+                video_name = "_".join(image_name.split("_")[:2]) 
+                if video_name in ["PTZ", "nightVideos", "lowFramerate", "turbulence"]:
+                    self.image_names.extend([image_name] * 10)
+                else:
+                    self.image_names.append(image_name)
+                    
+            
             self.transform = transforms.Compose([
                 transforms.ToImage(),
             ])

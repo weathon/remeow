@@ -125,6 +125,17 @@ class Trainer:
         return pred.float()
         # return pred[:,-1].float()
 
+    def get_cat_f1(self):
+        total = 0
+        count = 0
+        for i in self.confusions:
+            f1 = self.confusions[i].get_f1()
+            if f1 != 0:
+                total += f1
+                count += 1
+        return total / count
+    
+    
     def validate(self, X, Y, ROI, filenames): 
         self.model.eval()
         with torch.no_grad():
@@ -225,6 +236,7 @@ class Trainer:
                                 # "train_BG1": self.logger.Image(X[-batch_size][-24:-27]),
                                 # "train_BG2": self.logger.Image(X[-batch_size][-27:]),
                                 "rough_pred": self.logger.Image(rough_pred[0].unsqueeze(0)),
+                                "cat_f1": self.get_cat_f1()
                 }) 
                 
                 self.logger.log({"pstep":self.step, "val_loss": val_runnning_loss / len(self.val_dataloader), "val_f1": val_running_f1 / len(self.val_dataloader)})
