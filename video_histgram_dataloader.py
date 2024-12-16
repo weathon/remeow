@@ -446,9 +446,10 @@ class CustomDataset(Dataset):
             image_id = int(image_name.split("_")[-1].split(".")[0].replace("in","")) - i
             image_id = str(image_id).zfill(6)
             in_image_path = os.path.join(self.data_path, 'in', "_".join(image_name.split("_")[:-1] + [f"in{image_id}.jpg"]))
-            in_image = np.array(Image.open(in_image_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
-            in_image = self.transform(in_image)
-            in_image = self.image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+            if self.args.recent_frames != "none" or i==0:
+                in_image = np.array(Image.open(in_image_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
+                in_image = self.transform(in_image)
+                in_image = self.image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
             in_images.append(in_image)
             
         # histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')

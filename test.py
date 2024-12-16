@@ -36,14 +36,14 @@ parser.add_argument('--num_classes', type=int, default=3, help='Number of classe
 parser.add_argument('--recent_frames', type=str, default="conv3d", help='Recent frames method', choices=["conv3d", "linear", "none"])
 parser.add_argument('--checkpoint', type=str, default="", help='Load checkpoint')
 import shlex
-args = parser.parse_args(shlex.split('--fold 1 --steps 50000 --learning_rate 3e-5 --weight_decay 1.3e-2 --background_type mog2 --refine_step 1 --backbone 4 --image_size 512 --gpu 0 --clip 2 --conf_penalty 0.05 --lambda2 100 --hard_shadow --print_every 1000 --recent_frames none --lr_min 1e-6 --num_classes 3'))
+args = parser.parse_args(shlex.split('--fold 1 --steps 50000 --learning_rate 3e-5 --weight_decay 1.3e-2 --background_type mog2 --refine_step 1 --backbone 4 --image_size 512 --gpu 2 --clip 2 --conf_penalty 0.05 --lambda2 100 --hard_shadow --print_every 1000 --recent_frames conv3d --lr_min 1e-6 --num_classes 3'))
 
 
 # %%
 import torch
 
 val_dataset = CustomDataset("/home/wg25r/fastdata/CDNet", "/home/wg25r/fastdata/CDNet", args, "val", filename=True)
-val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=True, num_workers=32, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True) 
+val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=True, num_workers=32, pin_memory=True, persistent_workers=True, prefetch_factor=2, drop_last=True) 
 
 # %%wanglezhege
 import os
@@ -51,7 +51,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 model = MyModel(args)
 model = torch.nn.DataParallel(model).cuda()
 # model.load_state_dict(torch.load("86677878221_40.pth"))
-model.load_state_dict(torch.load("86677878221_40.pth", weights_only=False))
+model.load_state_dict(torch.load("91665645984_50.pth", weights_only=False))
 
 # %%
 class BinaryConfusion:
@@ -62,7 +62,8 @@ class BinaryConfusion:
         self.tn = 0
 
     def update(self, y_true, y_pred):
-
+        y_true = y_true.flatten()
+        y_pred = y_pred.flatten()
         self.tp += torch.sum((y_true == 1) & (y_pred == 1))
         self.fn += torch.sum((y_true == 1) & (y_pred == 0))
         self.fp += torch.sum((y_true == 0) & (y_pred == 1))
@@ -90,34 +91,31 @@ for i in videonames:
 with torch.no_grad():
     model.eval()
     for i, (images, masks, ROI, filenames) in enumerate(tqdm.tqdm(val_dataloader)):
-        print(1)
+    # print(1)
         video_names = ["_".join(filename.split("_")[:2]) for filename in filenames]
-        assert len(set(video_names)) == 1
         images = images.cuda()
         masks = masks.cuda()
         outputs = model(images).argmax(1) == 1
         assert outputs.shape == masks.shape == ROI.shape
-        outputs = outputs[(ROI>0.9)]
-        masks = masks[(ROI>0.9)]
-        assert outputs.shape == masks.shape
-        confusions[video_names[0]].update(masks, outputs > 0.5)
+        for j in range(outputs.shape[0]):
+            outputs_ = outputs[j][(ROI[j]>0.9)]
+            masks_ = masks[j][(ROI[j]>0.9)]
+            assert outputs_.shape == masks_.shape
+            confusions[video_names[j]].update(masks_, outputs_ > 0.5)
+            
+        
+        if i % 100 == 0:
+            f1 = {}
+            for i in videonames:
+                f1[i] = confusions[i].get_f1()
 
-# %%
-# confusion.get_f1() #YES!!!!! taiidonghhletaijingzhangyoujingzhangyoujidong
-# # main.py --fold 2 --steps 20000 --learning_rate 3e-5 --weight_decay 2e-2 --background_type mog2 --refine_step 1 --backbone 4 --image_size 512 --gpu 1 --clip 2 --conf_penalty 0.05 --lambda2 1 --hard_shadow --save_name 2 --final_weight_decay 4e-2 --final_weight_decay 5e-2 --save_name 5
+            # %%
+            f1_class = {}
+            for i in videonames:
+                class_name = i.split("_")[0]
+                if class_name not in f1_class:
+                    f1_class[class_name] = []
+                if f1[i] != 0:
+                    f1_class[class_name].append(f1[i].item())
 
-# %%
-f1 = {}
-for i in videonames:
-    f1[i] = confusions[i].get_f1()
-
-# %%
-f1_class = {}
-for i in videonames:
-    class_name = i.split("_")[0]
-    if class_name not in f1_class:
-        f1_class[class_name] = []
-    if f1[i] != 0:
-        f1_class[class_name].append(f1[i].item())
-
-print(f1_class)
+            print(f1_class)
