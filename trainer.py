@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-
+import os
 def printred(text):
     print(f"\033[31m{text}\033[0m")
 
@@ -13,6 +13,29 @@ REFINE = True
 from sklearn.metrics import f1_score
 from peft import LoraConfig, TaskType
 from peft import get_peft_model
+
+class BinaryConfusion:
+    def __init__(self):
+        self.tp = 0
+        self.fp = 0
+        self.fn = 0
+        self.tn = 0
+
+    def update(self, y_true, y_pred):
+        y_true = y_true.flatten()
+        y_pred = y_pred.flatten()
+        self.tp += torch.sum((y_true == 1) & (y_pred == 1))
+        self.fn += torch.sum((y_true == 1) & (y_pred == 0))
+        self.fp += torch.sum((y_true == 0) & (y_pred == 1))
+        self.tn += torch.sum((y_true == 0) & (y_pred == 0))
+
+
+    def get_f1(self):
+        precision = self.tp / (self.tp + self.fp) if (self.tp + self.fp) else 0
+        recall = self.tp / (self.tp + self.fn) if (self.tp + self.fn) else 0
+        if precision + recall == 0:
+            return 0
+        return 2 * (precision * recall) / (precision + recall)
 
 
 def print_trainable_parameters(model):
@@ -69,49 +92,28 @@ class Trainer:
     def train_step(self, X, Y, ROI):       
         self.model.train()
         self.optimizer.zero_grad()
-        # with torch.autocast(device_type='cuda', dtype=torch.float16):
-        # with torch.autocast(device_type='cuda', dtype=torch.float16):
-        if gradient_accumulation:
-            # for i in range(X.shape[0]//batch_size):
-            #     start = i * batch_size
-            #     end = start + batch_size
-            #     pred = self.model(X[start:end]) 
-            #     loss = self.loss_fn(pred, Y[start:end], ROI[start:end])
-            #     # self.scaler.scale(loss).backward()
-            #     loss.backward()
-            # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
-            # self.optimizer.step()
-            # e = 1e-6
-            # # pred = torch.sigmoid(pred)
-            # pred_ = pred[:,-1][ROI[-batch_size:] > 0.9] > 0.5
-            # pred_ = pred_.float()
-            # Y = Y[-batch_size:][ROI[-batch_size:] > 0.9] > 0.5
-            # Y = Y.float()
-            raise NotImplementedError    
+
+        pred = self.model(X.to("cuda:0")) 
+        # print(pred.shape)
+        loss = self.loss_fn(pred, Y, ROI)
+        reg_loss = self.regularization_loss(self.model_0, self.model.module.backbone.parameters())
+        loss = loss + reg_loss * self.args.lambda2
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
+        self.optimizer.step()
+        e = 1e-6
+        # pred = torch.sigmoid(pred)
+        pred = pred.argmax(dim=1)
+        
+        pred_ = (pred==1)[ROI > 0.9]
+        if self.args.hard_shadow:
+            pred = torch.where(ROI > 0.9, pred, 0)
+            pred = pred / 2.0
         else:
-            # print("outside ", X.shape)
-            # print("houbeiyangkun" * 10)
-            pred = self.model(X.to("cuda:0")) 
-            # print(pred.shape)
-            loss = self.loss_fn(pred, Y, ROI)
-            reg_loss = self.regularization_loss(self.model_0, self.model.module.backbone.parameters())
-            loss = loss + reg_loss * self.args.lambda2
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) 
-            self.optimizer.step()
-            e = 1e-6
-            # pred = torch.sigmoid(pred)
-            pred = pred.argmax(dim=1)
-            
-            pred_ = (pred==1)[ROI > 0.9]
-            if self.args.hard_shadow:
-                pred = torch.where(ROI > 0.9, pred, 0)
-                pred = pred / 2.0
-            else:
-                pred = torch.where(ROI > 0.9, pred, 0)
-            pred_ = pred_.float()
-            Y = Y[ROI > 0.9] > 0.5
-            Y = Y.float()
+            pred = torch.where(ROI > 0.9, pred, 0)
+        pred_ = pred_.float()
+        Y = Y[ROI > 0.9] > 0.5
+        Y = Y.float()
 
 
         f1 = ((2 * pred_ * Y).sum() + e) / ((pred_ + Y).sum() + e)
@@ -123,10 +125,16 @@ class Trainer:
         return pred.float()
         # return pred[:,-1].float()
 
-    def validate(self, X, Y, ROI): 
+    def validate(self, X, Y, ROI, filenames): 
         self.model.eval()
         with torch.no_grad():
             pred = self.model(X)
+            for j in range(pred.shape[0]):
+                outputs_ = pred[j][(ROI[j]>0.9)]
+                masks_ = Y[j][(ROI[j]>0.9)]
+                assert outputs_.shape == masks_.shape
+                video_name = "_".join(filenames[j].split("_")[:2])
+                self.confusions[video_name[j]].update(masks_, outputs_ > 0.5)
             loss = self.loss_fn(pred, Y, ROI)
             e = 1e-6
             # pred = torch.sigmoid(pred)
@@ -186,9 +194,15 @@ class Trainer:
                 self.logger.log({"pstep":self.step, "loss": np.mean(self.running_loss), "reg_loss": np.mean(self.runing_reg_loss), "f1": np.mean(self.running_f1), "lr": self.optimizer.param_groups[0]["lr"]})
                 printred(f"Epoch {self.step}, Step {train_i}, Loss: {np.mean(self.running_loss)}, F1: {np.mean(self.running_f1)}")
                 val_runnning_loss, val_running_f1 = 0, 0
-                for val_i, (val_X, val_Y, val_ROI) in enumerate(tqdm.tqdm(self.val_dataloader, ncols=60)):
+                videonames = list(set(["_".join(i.split("_")[:2]) for i in os.listdir("/mnt/fastdata/CDNet/in")]))
+
+                self.confusions = {}
+                for i in videonames:
+                    self.confusions[i] = BinaryConfusion()
+                    
+                for val_i, (val_X, val_Y, val_ROI, filenames) in enumerate(tqdm.tqdm(self.val_dataloader, ncols=60)):
                     # print(val_ROI[0].max())
-                    val_loss, val_f1, val_pred, rough_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda())
+                    val_loss, val_f1, val_pred, rough_pred = self.validate(val_X.cuda(), val_Y.cuda(), val_ROI.cuda(), filenames)
                     # print(val_f1
                     val_runnning_loss += val_loss
                     val_running_f1 += val_f1
