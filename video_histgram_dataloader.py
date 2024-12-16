@@ -307,7 +307,8 @@ else:
     print_ = lambda x: None
     
 class CustomDataset(Dataset):
-    def __init__(self, train_path, val_path, args, mode='train'):
+    def __init__(self, train_path, val_path, args, mode='train', filename=False):
+        self.filename = filename
         self.data_path = train_path if mode == 'train' else val_path
         fold = args.fold
         self.args = args
@@ -520,7 +521,10 @@ class CustomDataset(Dataset):
         if self.args.num_classes == 3:
             print_("Hit 5")
             Y[hard_shadow] = 2
-        return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
+        if self.filename:
+            return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0), image_name
+        else:
+            return X.to(torch.float32), Y.to(torch.float32).mean(0), ROI.to(torch.float32).mean(0)
 
 
 if __name__ == "__main__":
