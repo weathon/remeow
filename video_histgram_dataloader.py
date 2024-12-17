@@ -330,7 +330,7 @@ class CustomDataset(Dataset):
             for image_name in image_names:
                 video_name = "_".join(image_name.split("_")[:2])
                 cat_name =  image_name.split("_")[0]
-                if cat_name in ["PTZ", "nightVideos", "lowFramerate", "turbulence"]:
+                if not cat_name in ["baseline", "intermittentObjectMotion", "dynamicBackground", "badWeather", "cameraJitter", "shadow"]:
                     self.image_names.extend([image_name] * 10)
                 else:
                     self.image_names.append(image_name)
@@ -360,7 +360,7 @@ class CustomDataset(Dataset):
 
             ])
         self.noise = torchvision.transforms.v2.GaussianNoise(0.1)
-        self.random_resized_crop = transforms.RandomResizedCrop(IMG_SIZE, scale=(0.25, 1.5), ratio=(0.5, 1.5), interpolation=NEAREST)
+        self.random_resized_crop = transforms.RandomResizedCrop(IMG_SIZE, scale=(0.25, 1.5), ratio=(0.5, 3), interpolation=NEAREST)
 
     def crop(self, in_image, long_image, short_image, gt_image, roi_image):
         stacked = torch.cat([in_image, long_image, short_image, gt_image, roi_image], dim=0)
