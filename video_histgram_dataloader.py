@@ -386,31 +386,33 @@ class CustomDataset(Dataset):
         img = 0.8 * img + 0.2 * shifted_imgs.mean(0, keepdim=True)
         return img
     
-    def __len__(self):
+    def __len__(self): 
         return len(self.image_names)
 
     def strong_pan(self, img): 
         shifteds = [img] 
         img2 = img
         for i in range(random.randint(5, 60)):
-            shiftx = random.randint(0, 20)
-            img = torchvision.transforms.functional.affine(img, angle=0, translate=(shiftx, 0), scale=1, shear=0)
-            img2 = torchvision.transforms.functional.affine(img2, angle=0, translate=(-shiftx, 0), scale=1, shear=0)
-            shifteds.append(img) 
-            shifteds.append(img2)
-
+            shiftx = random.randint(10, 20)
+            img = torchvision.transforms.functional.affine(img, angle=random.random()*2, translate=(shiftx, 0), scale=1, shear=0)
+            img2 = torchvision.transforms.functional.affine(img2, angle=random.random()*2, translate=(-shiftx, 0), scale=1, shear=0)
+            shifteds.append(img.clone()) 
+            shifteds.append(img2.clone())
+        # tmp = torch.stack(shifteds).to(torch.float).mean(0)
+        # tmp = tmp.detach().cpu().numpy().transpose(1, 2, 0)
+        # cv2.imwrite("pan.png", tmp)
         return torch.stack(shifteds).to(torch.float).mean(0)
             
     def weak_pan(self, img):
         shifteds = [img] 
         img2 = img
         for i in range(random.randint(5, 20)):
-            shiftx = random.randint(0, 20)
-            img = torchvision.transforms.functional.affine(img, angle=0, translate=(shiftx, 0), scale=1, shear=0)
-            img2 = torchvision.transforms.functional.affine(img2, angle=0, translate=(-shiftx, 0), scale=1, shear=0)
-            shifteds.append(img) 
-            shifteds.append(img2)
-
+            shiftx = random.randint(10, 20)
+            img = torchvision.transforms.functional.affine(img, angle=random.random()*2, translate=(shiftx, 0), scale=1, shear=0)
+            img2 = torchvision.transforms.functional.affine(img2, angle=random.random()*2, translate=(-shiftx, 0), scale=1, shear=0)
+            shifteds.append(img.clone()) 
+            shifteds.append(img2.clone())
+        # print(len(shifteds))
         return torch.stack(shifteds).to(torch.float).mean(0)
     
     def close(self, a, b, threshold=0.02 * 255):
@@ -435,6 +437,8 @@ class CustomDataset(Dataset):
         long_image, short_image, gt_image, roi_image = self.transform(long_image, short_image, gt_image, roi_image)
         if self.mode == 'train':
             if random.random() > 0.9:
+            # if 1:
+            # if 0:
                 print_("Hit 1")
                 long_image = self.strong_pan(long_image)
                 short_image = self.weak_pan(short_image) 
@@ -450,6 +454,8 @@ class CustomDataset(Dataset):
             if random.random() > 0.7:
                 print_("Hit -4")
                 long_image = self.bg_trans(long_image)
+
+                
         in_images = []
         for i in range(0,80,10):
             image_id = int(image_name.split("_")[-1].split(".")[0].replace("in","")) - i
@@ -457,6 +463,11 @@ class CustomDataset(Dataset):
             in_image_path = os.path.join(self.data_path, 'in', "_".join(image_name.split("_")[:-1] + [f"in{image_id}.jpg"]))
             if self.args.recent_frames != "none" or i==0:
                 in_image = np.array(Image.open(in_image_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
+                if random.random() > 0.7:
+                    x1, y1 = random.randint(0, 512-200), random.randint(0, 512-200)
+                    x2, y2 = x1 + random.randint(100, 200), y1 + random.randint(100, 200)
+                    in_image[y1:y2, x1:x2] = 255 - in_image[y1:y2, x1:x2]
+                    
                 in_image = self.transform(in_image)
                 in_image = self.image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
                 in_image = in_image + in_image * (torch.rand(1) * 0.5 - 0.25)
@@ -469,9 +480,13 @@ class CustomDataset(Dataset):
         # histgram = histgram.flatten(0, 1)
         
         in_images = torch.cat(in_images, dim=0)
+        long_image[long_image<0] = 0
+        short_image[short_image<0] = 0
+        long_image[long_image>255] = 255
+        short_image[short_image>255] = 255
         
-        long_image = self.image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
-        short_image = self.image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+        long_image = self.image_processor(images=long_image/255, return_tensors='pt', do_rescale=False)['pixel_values'][0]
+        short_image = self.image_processor(images=short_image/255, return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
             if random.random() > 0.5:
                 in_image_, long_image_, short_image_, gt_image_, roi_image_ = self.crop(in_images, long_image, short_image, gt_image, roi_image)
@@ -489,9 +504,10 @@ class CustomDataset(Dataset):
             #     in_images = self.fake_shadow(in_images)
             #     long_image = self.fake_shadow(long_image)
             #     short_image = self.fake_shadow(short_image)
-        if self.args.use_difference:
-            long_image = long_image - in_images[0]
-            short_image = short_image - in_images[0]
+        # if self.args.use_difference:
+        #     long_image = long_image - in_images[0]
+        #     short_image = short_image - in_images[0] 
+        #  this is the reason reverse and no pan on by default. check the main file now 
             
         X = torch.cat([in_images, long_image, short_image], dim=0)
         if self.mode == "train": 
@@ -563,13 +579,13 @@ if __name__ == "__main__":
     parser.add_argument('--recent_frames', type=str, default="conv3d", help='Recent frames method', choices=["conv3d", "linear", "none"])
     parser.add_argument('--checkpoint', type=str, default="", help='Load checkpoint')
 
-    argString = '--gpu 0 --fold 2 --use_difference --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2 --hard_shadow'
+    argString = '--gpu 0 --fold 2 --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2 --hard_shadow'
     args = parser.parse_args(shlex.split(argString))
-    X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[944]
+    X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[9440]
     #random.randint(0, 1000)
     std = torch.tensor([0.5, 0.5, 0.5])
     mean = torch.tensor([0.5, 0.5, 0.5])
-    bg = X[-3:]
+    bg = X[-6:-3]
     X = X[:3]
     print(bg.shape)
     # denorm

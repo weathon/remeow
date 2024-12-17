@@ -197,15 +197,21 @@ class ISNetBackbone(nn.Module):
         super(ISNetBackbone, self).__init__()
         self.backbone = ISNetDIS().cuda()
         self.backbone.load_state_dict(torch.load("/home/wg25r/isnet-general-use.pth"))
-        self.backbone.conv_in = nn.Conv2d(9, 64, kernel_size=(3,3), stride=(2,2), padding=(1,1))
-        self.backbone.side1 = torch.nn.Conv2d(64, 3, 3, 1, 1)
+        self.backbone.conv_in = torch.nn.Identity()
+        self.backbone.side1 = torch.nn.Identity()
+        self.in_conv = nn.Conv2d(9, 64, kernel_size=(3,3), padding=(1,1))
+        self.head = torch.nn.Conv2d(64, 3, 3, 1, 1) # should not include this in the backbone because of the L2 loss
 
-    def forward(self, X):
+    def forward(self, X, softmax=True):
         X = X[:,:30]
         frames, long, short = X[:,:-6], X[:,-6:-3], X[:,-3:]        
         current = frames[:, :3]
         x = torch.cat([short, long, current], dim=1)
-        x = self.backbone(x)[0][0]
+        x = self.in_conv(x)
+        x = self.backbone(x)[1][0]
+        x = self.head(x)
+        if softmax:
+            x = torch.nn.functional.softmax(x, dim=1)
         return x
 
 
