@@ -328,8 +328,9 @@ class CustomDataset(Dataset):
         if mode == 'train':
             self.image_names = []
             for image_name in image_names:
-                video_name = "_".join(image_name.split("_")[:2]) 
-                if video_name in ["PTZ", "nightVideos", "lowFramerate", "turbulence"]:
+                video_name = "_".join(image_name.split("_")[:2])
+                cat_name =  image_name.split("_")[0]
+                if cat_name in ["PTZ", "nightVideos", "lowFramerate", "turbulence"]:
                     self.image_names.extend([image_name] * 10)
                 else:
                     self.image_names.append(image_name)
@@ -458,6 +459,8 @@ class CustomDataset(Dataset):
                 in_image = np.array(Image.open(in_image_path).resize((IMG_SIZE, IMG_SIZE), Image.NEAREST))
                 in_image = self.transform(in_image)
                 in_image = self.image_processor(images=in_image/max(255, in_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
+                in_image = in_image + in_image * (torch.rand(1) * 0.5 - 0.25)
+                
             in_images.append(in_image)
             
         # histgram = torch.load(os.path.join(self.data_path, 'hist', video_name + ".pt"), weights_only=False, map_location='cpu')
@@ -466,6 +469,7 @@ class CustomDataset(Dataset):
         # histgram = histgram.flatten(0, 1)
         
         in_images = torch.cat(in_images, dim=0)
+        
         long_image = self.image_processor(images=long_image/max(255, long_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         short_image = self.image_processor(images=short_image/max(255, short_image.max()), return_tensors='pt', do_rescale=False)['pixel_values'][0]
         if self.mode == "train":
@@ -555,7 +559,10 @@ if __name__ == "__main__":
     parser.add_argument('--conf_penalty', type=float, default=0, help='Confidence penalty, penalize the model if it is too confident')
     parser.add_argument('--hard_shadow', action="store_true", help='If use hard shadow')
     parser.add_argument('--use_difference', action="store_true", help='If use difference between current and background ratehr than background frame')
-    
+    parser.add_argument('--num_classes', type=int, default=3, help='Number of classes')
+    parser.add_argument('--recent_frames', type=str, default="conv3d", help='Recent frames method', choices=["conv3d", "linear", "none"])
+    parser.add_argument('--checkpoint', type=str, default="", help='Load checkpoint')
+
     argString = '--gpu 0 --fold 2 --use_difference --noise_level 0.3 --steps 50000 --learning_rate 4e-5 --mask_upsample shuffle --weight_decay 3e-2 --hard_shadow'
     args = parser.parse_args(shlex.split(argString))
     X, Y, ROI = CustomDataset('/mnt/fastdata/CDNet', '/mnt/fastdata/CDNet', args, mode='train')[944]
